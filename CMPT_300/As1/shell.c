@@ -1,11 +1,13 @@
 // Shell starter file
 // You may make any changes to any part of this file.
-
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 
 #define COMMAND_LENGTH 1024
 #define NUM_TOKENS (COMMAND_LENGTH / 2 + 1)
@@ -139,6 +141,27 @@ int main(int argc, char *argv[])
          *    child to finish. Otherwise, parent loops back to
          *    read_command() again immediately.
          */
+        pid_t Pid=fork(); 
+        //<-1, which means to wait for any child process whose process group ID is equal to the absolute value of pid.
+        if (Pid <= -1)
+        {
+            write(STDERR_FILENO, "Error: fork failed\n", strlen("Error: fork failed\n"));
+        }
+        // 0 means to wait for any child process whose process group ID is equal to that of the calling process
+        else if (Pid == 0)
+        {
+            if (execvp(tokens[0], tokens) == -1)
+            {
+                write(STDERR_FILENO, "Unsuccesful call to execvp\n", strlen("Unsuccesful call to execvp\n"));
+                exit(-1); 
+            }
+            exit(0); 
+        }
+        if (!in_background)
+        {
+            while (waitpid(-1, NULL, WNOHANG) > 0);
+        }
+      
     }
     return 0;
 }
