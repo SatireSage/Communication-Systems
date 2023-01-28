@@ -115,7 +115,12 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
 	}
     else if(strcmp(tokens[0], "cd") == 0)
     {
-
+        //if chdir returns error
+        if (chdir(tokens[1])!=0)
+        {
+            write(STDOUT_FILENO, "Error: Could not change directory.", strlen("Error: Could not change directory."));
+        }
+        return 1; 
     }
     else if(strcmp(tokens[0], "pwd") == 0)
     {
@@ -128,7 +133,6 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         if (current_dir !=NULL)
         {
             write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
-            write(STDOUT_FILENO, "\n", strlen("\n"));
         } 
         else 
         {
