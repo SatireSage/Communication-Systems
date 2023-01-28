@@ -10,7 +10,10 @@
 
 
 #define COMMAND_LENGTH 1024
+#define HISTORY_NUM 10
 #define NUM_TOKENS (COMMAND_LENGTH / 2 + 1)
+char history [HISTORY_NUM][COMMAND_LENGTH];
+int command_num=0;  
 
 /**
  * Command Input and Processing
@@ -103,7 +106,27 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
         tokens[token_count - 1] = 0;
     }
 }
+int internal_command(char *buff, char *tokens[], _Bool *in_background)
+{
+    //exit
+    if (strcmp(tokens[0], "exit") == 0) 
+    { 
+		return -1;
+	}
+    else if(strcmp(tokens[0], "cd") == 0)
+    {
 
+    }
+    else if(strcmp(tokens[0], "pwd") == 0)
+    {
+
+    }
+    else if(strcmp(tokens[0], "help") == 0)
+    {
+
+    }
+    return 0; 
+}
 /**
  * Main and Execute Commands
  */
@@ -120,6 +143,7 @@ int main(int argc, char *argv[])
         write(STDOUT_FILENO, "$ ", strlen("$ "));
         _Bool in_background = false;
         read_command(input_buffer, tokens, &in_background);
+   
 
         // DEBUG: Dump out arguments:
         for (int i = 0; tokens[i] != NULL; i++)
@@ -132,7 +156,14 @@ int main(int argc, char *argv[])
         {
             write(STDOUT_FILENO, "Run in background.", strlen("Run in background."));
         }
-
+        if (input_buffer[0] == '\0' || tokens[0] == NULL) {
+			continue;
+		}
+        int command = internal_command(input_buffer, tokens, &in_background);
+        if (command==-1)
+        {
+            return 0; 
+        }
         /**
          * Steps For Basic Shell:
          * 1. Fork a child process
