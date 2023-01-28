@@ -10,9 +10,9 @@
 
 
 #define COMMAND_LENGTH 1024
-#define HISTORY_NUM 10
+#define HISTORY_DEPTH 10
 #define NUM_TOKENS (COMMAND_LENGTH / 2 + 1)
-char history [HISTORY_NUM][COMMAND_LENGTH];
+char history [HISTORY_DEPTH][COMMAND_LENGTH];
 int command_num=0;  
 
 /**
@@ -111,7 +111,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     //exit
     if (strcmp(tokens[0], "exit") == 0) 
     { 
-		return -1;
+		return 0;
 	}
     else if(strcmp(tokens[0], "cd") == 0)
     {
@@ -119,7 +119,24 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     }
     else if(strcmp(tokens[0], "pwd") == 0)
     {
+        int command_number=command_num % HISTORY_DEPTH; 
+        strcpy(history[command_number], tokens[0]); 
+        command_num++;
 
+        char curr_dir[COMMAND_LENGTH]; 
+        char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
+        if (current_dir !=NULL)
+        {
+            write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
+            write(STDOUT_FILENO, "\n", strlen("\n"));
+        } 
+        else 
+        {
+            write(STDOUT_FILENO, "Error: Could not display current directory.", strlen("Error: Could not display current directory."));
+        }
+
+        return 1; 
+        
     }
     else if(strcmp(tokens[0], "help") == 0)
     {
@@ -141,6 +158,13 @@ int main(int argc, char *argv[])
         // Use write because we need to use read() to work with
         // signals, and read() is incompatible with printf().
         write(STDOUT_FILENO, "$ ", strlen("$ "));
+        char curr_dir[COMMAND_LENGTH]; 
+        char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
+        if (current_dir !=NULL)
+        {
+            write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
+        } 
+
         _Bool in_background = false;
         read_command(input_buffer, tokens, &in_background);
    
@@ -160,10 +184,15 @@ int main(int argc, char *argv[])
 			continue;
 		}
         int command = internal_command(input_buffer, tokens, &in_background);
-        if (command==-1)
+        if (command==0)
         {
             return 0; 
         }
+        if (command==1)
+        {
+            continue; 
+        }
+        
         /**
          * Steps For Basic Shell:
          * 1. Fork a child process
