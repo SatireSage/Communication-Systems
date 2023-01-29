@@ -154,6 +154,10 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     }
     else if(strcmp(tokens[0], "help") == 0)
     {   
+        if ((tokens[2])!= NULL)
+        {
+            write(STDOUT_FILENO, "Error: More than 1 argument.\n", strlen("Error: More than 1 argument.\n"));  
+        }
         if ((tokens[1])== NULL)
         {
             write(STDOUT_FILENO, "1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n", strlen("1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n"));
