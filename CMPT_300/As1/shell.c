@@ -120,14 +120,20 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         {
             write(STDOUT_FILENO, "Error: Could not change directory.", strlen("Error: Could not change directory."));
         }
+        //ADD COMMAND TO THE HISTORY
+        if (tokens[1]!=NULL)
+        {
+            int command_number=command_num % HISTORY_DEPTH;
+          
+            strcat(tokens[0], " "); 
+            strcat (tokens[0] ,tokens[1]); 
+            strcpy(history[command_number], tokens[0]); 
+            command_num++;    
+        }
         return 1; 
     }
     else if(strcmp(tokens[0], "pwd") == 0)
     {
-        int command_number=command_num % HISTORY_DEPTH; 
-        strcpy(history[command_number], tokens[0]); 
-        command_num++;
-
         char curr_dir[COMMAND_LENGTH]; 
         char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
         if (current_dir !=NULL)
@@ -138,6 +144,10 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         {
             write(STDOUT_FILENO, "Error: Could not display current directory.", strlen("Error: Could not display current directory."));
         }
+        //add command to the history 
+        int command_number=command_num % HISTORY_DEPTH; 
+        strcpy(history[command_number], tokens[0]); 
+        command_num++;
 
         return 1; 
         
