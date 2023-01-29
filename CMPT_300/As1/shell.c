@@ -153,8 +153,33 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         
     }
     else if(strcmp(tokens[0], "help") == 0)
-    {
+    {   
+        if ((tokens[1])== NULL)
+        {
+            write(STDOUT_FILENO, "1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n", strlen("1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n"));
+            write(STDOUT_FILENO, "2. exit\nexit: Exits the shell. Takes no other arguments.\n", strlen("2. exit\n exit: Exits the shell. Takes no other arguments.\n"));
+            write(STDOUT_FILENO, "3. pwd\nPrints the current working directory. Takes no other arguments.\n", strlen("3. pwd\nPrints the current working directory. Takes no other arguments.\n"));
+            write(STDOUT_FILENO, "4. cd\nChanges the current working directory to the directory specified. Takes only one argument.\n", strlen("4. cd\nChanges the current working directory to the directory specified. Takes only one argument.\n"));
+            write(STDOUT_FILENO, "5. history\nDisplays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments.", strlen("5. history\nDisplays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments."));
 
+        }
+        else if (strcmp(tokens[1], "exit") == 0)
+        {
+            write(STDOUT_FILENO, "'exit' is a builtin command for quitting the shell.\n", strlen("'exit' is a builtin command for quitting the shell.\n"));
+        }
+        else if (strcmp(tokens[1], "cd") == 0)
+        {
+            write(STDOUT_FILENO, "'cd' is a builtin command for changing the directory.\n", strlen("'cd' is a builtin command for changing the directory.\n"));
+        }
+        else if (strcmp(tokens[1], "pwd") == 0)
+        {
+            write(STDOUT_FILENO, "'pwd' is a builtin command for finding the current path.\n", strlen("'pwd' is a builtin command for finding the current path.\n"));
+        }
+        else if (strcmp(tokens[1], "history") == 0)
+        {
+            write(STDOUT_FILENO, "'history' is a builtin command for showing the 10 most recent commands.\n", strlen("'history' is a builtin command for showing the 10 most recent commands.\n"));
+        }
+        return 1; 
     }
     return 0; 
 }
