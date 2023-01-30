@@ -107,6 +107,11 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
         tokens[token_count - 1] = 0;
     }
 }
+void history_print()
+{
+    
+
+}
 int internal_command(char *buff, char *tokens[], _Bool *in_background)
 {
     //exit
@@ -114,6 +119,15 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     { 
 		return -1;
 	}
+    else if (strcmp(tokens[0], "history") == 0)
+    {
+        int command_number=command_num % HISTORY_DEPTH; 
+        strcpy(history[command_number], tokens[0]); 
+        command_num++;
+        history_print(); 
+        return 1; 
+
+    }
     else if(strcmp(tokens[0], "cd") == 0)
     {
         //if chdir returns error
@@ -183,18 +197,29 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         {
             write(STDOUT_FILENO, "'history' is a builtin command for showing the 10 most recent commands.\n", strlen("'history' is a builtin command for showing the 10 most recent commands.\n"));
         }
+        else 
+        {
+            char arr[100];
+            sprintf(arr, "%s", tokens[1]);
+            strcat(arr, " is an external command.\n"); 
+            write(STDOUT_FILENO,(arr), strlen(arr));
+        }
         //add command to history
         int command_number=command_num % HISTORY_DEPTH;
         strcat(tokens[0], " "); 
-        strcat (tokens[0] ,tokens[1]); 
+        if (tokens[1] !=NULL)
+        {
+            strcat (tokens[0] ,tokens[1]); 
+        }
         strcpy(history[command_number], tokens[0]); 
         command_num++; 
 
         return 1; 
     }
+    command_num++; 
     return 0; 
 }
-void input()
+void get_input()
 {
     write(STDOUT_FILENO, "$ ", strlen("$ "));
     char curr_dir[COMMAND_LENGTH]; 
@@ -207,7 +232,7 @@ void input()
 }
 void handle_SIGINT(int sig)
 {
-	input();
+	get_input();
 }
 void signal_handling()
 {
@@ -232,7 +257,7 @@ int main(int argc, char *argv[])
         // Get command
         // Use write because we need to use read() to work with
         // signals, and read() is incompatible with printf().
-        input(); 
+        get_input(); 
 
         _Bool in_background = false;
         read_command(input_buffer, tokens, &in_background);
@@ -282,7 +307,6 @@ int main(int argc, char *argv[])
             if (execvp(tokens[0], tokens) == -1)
             {
                 write(STDERR_FILENO, "Unsuccesful call to execvp\n", strlen("Unsuccesful call to execvp\n"));
-
             }
             exit(0); 
         }
