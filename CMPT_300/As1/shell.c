@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 
 #define COMMAND_LENGTH 1024
@@ -111,7 +112,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     //exit
     if (strcmp(tokens[0], "exit") == 0) 
     { 
-		return 0;
+		return -1;
 	}
     else if(strcmp(tokens[0], "cd") == 0)
     {
@@ -124,7 +125,6 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         if (tokens[1]!=NULL)
         {
             int command_number=command_num % HISTORY_DEPTH;
-          
             strcat(tokens[0], " "); 
             strcat (tokens[0] ,tokens[1]); 
             strcpy(history[command_number], tokens[0]); 
@@ -183,10 +183,41 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         {
             write(STDOUT_FILENO, "'history' is a builtin command for showing the 10 most recent commands.\n", strlen("'history' is a builtin command for showing the 10 most recent commands.\n"));
         }
+        //add command to history
+        int command_number=command_num % HISTORY_DEPTH;
+        strcat(tokens[0], " "); 
+        strcat (tokens[0] ,tokens[1]); 
+        strcpy(history[command_number], tokens[0]); 
+        command_num++; 
+
         return 1; 
     }
     return 0; 
 }
+void input()
+{
+    write(STDOUT_FILENO, "$ ", strlen("$ "));
+    char curr_dir[COMMAND_LENGTH]; 
+    char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
+    if (current_dir !=NULL)
+    {
+        write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
+    } 
+
+}
+void handle_SIGINT(int sig)
+{
+	input();
+}
+void signal_handling()
+{
+	struct sigaction handler;
+	handler.sa_handler = handle_SIGINT;
+	handler.sa_flags = 0;
+	sigemptyset(&handler.sa_mask);
+	sigaction(SIGINT, &handler, NULL);
+}
+
 /**
  * Main and Execute Commands
  */
@@ -194,19 +225,14 @@ int main(int argc, char *argv[])
 {
     char input_buffer[COMMAND_LENGTH];
     char *tokens[NUM_TOKENS];
+    signal_handling();
     while (true)
     {
 
         // Get command
         // Use write because we need to use read() to work with
         // signals, and read() is incompatible with printf().
-        write(STDOUT_FILENO, "$ ", strlen("$ "));
-        char curr_dir[COMMAND_LENGTH]; 
-        char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
-        if (current_dir !=NULL)
-        {
-            write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
-        } 
+        input(); 
 
         _Bool in_background = false;
         read_command(input_buffer, tokens, &in_background);
@@ -227,7 +253,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
         int command = internal_command(input_buffer, tokens, &in_background);
-        if (command==0)
+        if (command==-1)
         {
             return 0; 
         }
@@ -246,7 +272,7 @@ int main(int argc, char *argv[])
          */
         pid_t Pid=fork(); 
         //<-1, which means to wait for any child process whose process group ID is equal to the absolute value of pid.
-        if (Pid <= -1)
+        if (Pid < 0)
         {
             write(STDERR_FILENO, "Error: fork failed\n", strlen("Error: fork failed\n"));
         }
@@ -256,7 +282,7 @@ int main(int argc, char *argv[])
             if (execvp(tokens[0], tokens) == -1)
             {
                 write(STDERR_FILENO, "Unsuccesful call to execvp\n", strlen("Unsuccesful call to execvp\n"));
-                exit(-1); 
+
             }
             exit(0); 
         }
