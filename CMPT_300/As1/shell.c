@@ -107,10 +107,26 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
         tokens[token_count - 1] = 0;
     }
 }
+
+// print history: up to 10 most recent entered commands
+    // # user commands starting at 0
+    // display commands in DESCENDING ORDER
+    // output includes:
+        // external application commands and internal commands
+    // display command # on the LEFT, arguments on RIGHT
+        // print "tab" between 2 outputs to lineup correctly
+        // command uses &, must be added to history with &
+    // 
 void history_print()
 {
-    
-
+        printf("printing most recent 10 commands...\n");
+        int count = 10;
+        for(int indx = 0; indx < 10; indx++) 
+        {
+            printf("%d \t", (command_num-count));
+            printf("%s \n", history[indx]);
+            count--;
+        }
 }
 int internal_command(char *buff, char *tokens[], _Bool *in_background)
 {
