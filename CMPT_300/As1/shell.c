@@ -124,7 +124,7 @@ void history_print()
     if(command_num < 10)
     {
         printf("printing most recent 10 commands...\n");
-        for(int indx = command_num; indx >= 0; indx--) 
+        for(int indx = command_num-1; indx >= 0; indx--) 
         {
             printf("%d \t", indx);
             printf("%s \n", history[indx]);
