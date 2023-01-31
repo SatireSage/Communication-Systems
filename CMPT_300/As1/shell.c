@@ -9,6 +9,14 @@
 #include <unistd.h>
 #include <signal.h>
 
+int tokenize_command(char *buff, char *tokens[]);
+void read_command(char *buff, char *tokens[], _Bool *in_background);
+void history_print();
+int history_command(char *buff, char *tokens[], _Bool *in_background, int command);
+int internal_command(char *buff, char *tokens[], _Bool *in_background);
+void get_input();
+void handle_SIGINT(int sig);
+void signal_handling();
 
 #define COMMAND_LENGTH 1024
 #define HISTORY_DEPTH 10
@@ -111,30 +119,69 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
 // print history: up to 10 most recent entered commands
 void history_print()
 {
-    char command[100];
-    if(command_num > HISTORY_DEPTH)
+    char command_arr[100];
+    if(command_num < HISTORY_DEPTH)
     {
-        for(int idx = HISTORY_DEPTH; idx > 0; idx--) 
+        for(int jdx = command_num-1; jdx >= 0; jdx--)
         {
-            sprintf(command, "%d", (command_num - HISTORY_DEPTH + idx));
-            write(STDOUT_FILENO, command, strlen(command));
+            // printf("%d \t", jdx);
+            // printf("%s \n", history[jdx]);
+            
+            sprintf(command_arr, "%d", (jdx));
+            write(STDOUT_FILENO, command_arr, strlen(command_arr));
             write(STDOUT_FILENO, "\t", strlen("\t"));
-            write(STDOUT_FILENO, history[(command_num + idx) % HISTORY_DEPTH], strlen(history[(command_num + idx) % HISTORY_DEPTH]));
+            write(STDOUT_FILENO, history[jdx], strlen(history[jdx]));
             write(STDOUT_FILENO, "\n", strlen("\n"));
+            
         }
     }
     else 
     {
-        for(int jdx = command_num-1; jdx >= 0; jdx--)
+        for(int idx = HISTORY_DEPTH; idx > 0; idx--) 
         {
-            sprintf(command, "%d", (jdx + 1));
-            write(STDOUT_FILENO, command, strlen(command));
+            // printf("%d \t", command_num);
+            // printf("%s \n", history[command_num]);
+            
+            sprintf(command_arr, "%d", (command_num - HISTORY_DEPTH + idx));
+            write(STDOUT_FILENO, command_arr, strlen(command_arr));
             write(STDOUT_FILENO, "\t", strlen("\t"));
-            write(STDOUT_FILENO, history[jdx], strlen(history[jdx]));
+            write(STDOUT_FILENO, history[(command_num + idx) % HISTORY_DEPTH], strlen(history[(command_num + idx) % HISTORY_DEPTH]));
             write(STDOUT_FILENO, "\n", strlen("\n"));
+            
         }
     }
 }
+
+int history_command(char *buff, char *tokens[], _Bool *in_background, int command)
+{
+    if((command < 1) || (command > command_num) || (command < (command_num - 9)))
+    {
+        write(STDERR_FILENO, "Error: Command is out of range. \n", strlen("Error: Command is out of range. \n"));
+        return 1;
+    }
+
+    // nth command
+    strcpy(buff, history[(command - 1) % HISTORY_DEPTH]);
+    int tok = tokenize_command(buff, tokens);
+
+    if(tok == 0)
+    {
+        write(STDERR_FILENO, "Error: Unable to retrieve command from history. \n", strlen("Error: Unable to retrieve command from history. \n"));
+        return 1;
+    }
+    
+    *in_background = false;
+	if (strcmp(tokens[tok - 1], "/finish") == 0) {
+		*in_background = true;
+		tokens[tok - 1] = 0;
+	}
+    // add to history
+    write(STDOUT_FILENO, history[(command - 1) % HISTORY_DEPTH], strlen(history[(command - 1) % HISTORY_DEPTH]));
+    write(STDOUT_FILENO, "\n", strlen("\n"));
+    // execute command
+    return(internal_command(buff, tokens, in_background));
+}
+
 int internal_command(char *buff, char *tokens[], _Bool *in_background)
 {
     //exit
@@ -243,9 +290,24 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
 
         return 1; 
     }
+    else if(tokens[0][0] == '!')
+    {
+        if(strlen(tokens[0]) > 1)
+        {
+            if(tokens[0][1] != '!')
+            {
+                int tok = atoi(&(tokens[0][1]));    // !
+                // run nth history command
+                return(history_command(buff, tokens, in_background, tok));
+            }
+            // run most recent history command
+            return (history_command(buff, tokens, in_background, command_num));
+        }
+    }
     //command_num++; 
     return 0; 
 }
+
 void get_input()
 {
     write(STDOUT_FILENO, "$ ", strlen("$ "));
