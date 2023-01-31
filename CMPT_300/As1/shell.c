@@ -109,41 +109,31 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
 }
 
 // print history: up to 10 most recent entered commands
-    // # user commands starting at 0
-    // display commands in DESCENDING ORDER
-    // output includes:
-        // external application commands and internal commands
-    // display command # on the LEFT, arguments on RIGHT
-        // print "tab" between 2 outputs to lineup correctly
-        // command uses &, must be added to history with &
-    // 
 void history_print()
 {
-    // printing history of commands
-    // less than 10 commands
-    if(command_num < 10)
+    char command[100];
+    if(command_num > HISTORY_DEPTH)
     {
-        printf("printing most recent 10 commands...\n");
-        for(int indx = command_num-1; indx >= 0; indx--) 
+        for(int idx = HISTORY_DEPTH; idx > 0; idx--) 
         {
-            printf("%d \t", indx);
-            printf("%s \n", history[indx]);
+            sprintf(command, "%d", (command_num - HISTORY_DEPTH + idx));
+            write(STDOUT_FILENO, command, strlen(command));
+            write(STDOUT_FILENO, "\t", strlen("\t"));
+            write(STDOUT_FILENO, history[(command_num + idx) % HISTORY_DEPTH], strlen(history[(command_num + idx) % HISTORY_DEPTH]));
+            write(STDOUT_FILENO, "\n", strlen("\n"));
         }
     }
-    // 10+ commands
     else 
     {
-        printf("printing most recent 10 commands...\n");
-        int count = 0;
-        for(int indx = 9; indx >= 0; indx--) 
+        for(int jdx = command_num-1; jdx >= 0; jdx--)
         {
-            printf("%d \t", (command_num-count));
-            printf("%s \n", history[indx]);
-            count++;
+            sprintf(command, "%d", (jdx + 1));
+            write(STDOUT_FILENO, command, strlen(command));
+            write(STDOUT_FILENO, "\t", strlen("\t"));
+            write(STDOUT_FILENO, history[jdx], strlen(history[jdx]));
+            write(STDOUT_FILENO, "\n", strlen("\n"));
         }
     }
-
-    // running !n command
 }
 int internal_command(char *buff, char *tokens[], _Bool *in_background)
 {
@@ -253,7 +243,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
 
         return 1; 
     }
-    command_num++; 
+    //command_num++; 
     return 0; 
 }
 void get_input()
@@ -345,7 +335,21 @@ int main(int argc, char *argv[])
             {
                 write(STDERR_FILENO, "Unsuccesful call to execvp\n", strlen("Unsuccesful call to execvp\n"));
             }
-            exit(0); 
+            exit(0);
+        }
+        // add execvp command to history
+        if (tokens[0]!=NULL)
+        {
+            int command_number=command_num % HISTORY_DEPTH;
+            char char_arr[1024];
+            sprintf(char_arr, "%s", tokens[0]);
+            strcat(char_arr, " ");   
+            if (tokens[1] !=NULL)
+            {
+                strcat(char_arr,tokens[1]); 
+            }
+            strcpy(history[command_number], char_arr); 
+            command_num++; 
         }
         if (!in_background)
         {
