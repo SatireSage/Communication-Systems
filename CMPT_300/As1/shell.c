@@ -119,6 +119,17 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
     // 
 void history_print()
 {
+    if(command_num < 10)
+    {
+        printf("printing most recent 10 commands...\n");
+        for(int indx = 0; indx < command_num; indx++) 
+        {
+            printf("%d \t", indx);
+            printf("%s \n", history[indx]);
+        }
+    }
+    else 
+    {
         printf("printing most recent 10 commands...\n");
         int count = 10;
         for(int indx = 0; indx < 10; indx++) 
@@ -127,6 +138,7 @@ void history_print()
             printf("%s \n", history[indx]);
             count--;
         }
+    }
 }
 int internal_command(char *buff, char *tokens[], _Bool *in_background)
 {
@@ -154,11 +166,11 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         //ADD COMMAND TO THE HISTORY
         if (tokens[1]!=NULL)
         {
-            int command_number=command_num % HISTORY_DEPTH;
+             int command_number=command_num % HISTORY_DEPTH;
             strcat(tokens[0], " "); 
             strcat (tokens[0] ,tokens[1]); 
             strcpy(history[command_number], tokens[0]); 
-            command_num++;    
+            command_num++;       
         }
         return 1; 
     }
