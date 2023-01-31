@@ -172,10 +172,12 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         if (tokens[1]!=NULL)
         {
             int command_number=command_num % HISTORY_DEPTH;
-            strcat(tokens[0], " "); 
-            strcat (tokens[0] ,tokens[1]); 
-            strcpy(history[command_number], tokens[0]); 
-            command_num++;       
+            char char_arr[1024];
+            sprintf(char_arr, "%s", tokens[0]);
+            strcat(char_arr, " "); 
+            strcat(char_arr,tokens[1]); 
+            strcpy(history[command_number], char_arr); 
+            command_num++;   
         }
         return 1; 
     }
@@ -239,12 +241,14 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         }
         //add command to history
         int command_number=command_num % HISTORY_DEPTH;
-        strcat(tokens[0], " "); 
+        char char_arr[1024];
+        sprintf(char_arr, "%s", tokens[0]);
+        strcat(char_arr, " ");   
         if (tokens[1] !=NULL)
         {
-            strcat (tokens[0] ,tokens[1]); 
+            strcat(char_arr,tokens[1]); 
         }
-        strcpy(history[command_number], tokens[0]); 
+        strcpy(history[command_number], char_arr); 
         command_num++; 
 
         return 1; 
