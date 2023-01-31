@@ -131,7 +131,7 @@ void history_print()
     else 
     {
         printf("printing most recent 10 commands...\n");
-        int count = 10;
+        int count = 9;
         for(int indx = 0; indx < 10; indx++) 
         {
             printf("%d \t", (command_num-count));
@@ -166,7 +166,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         //ADD COMMAND TO THE HISTORY
         if (tokens[1]!=NULL)
         {
-             int command_number=command_num % HISTORY_DEPTH;
+            int command_number=command_num % HISTORY_DEPTH;
             strcat(tokens[0], " "); 
             strcat (tokens[0] ,tokens[1]); 
             strcpy(history[command_number], tokens[0]); 
