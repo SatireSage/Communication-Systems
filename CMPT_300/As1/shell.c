@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
 int tokenize_command(char *buff, char *tokens[]);
 void read_command(char *buff, char *tokens[], _Bool *in_background);
@@ -88,10 +89,10 @@ void read_command(char *buff, char *tokens[], _Bool *in_background)
     // Read input
     int length = read(STDIN_FILENO, buff, COMMAND_LENGTH - 1);
 
-    if (length < 0)
+    if ((length < 0) && (errno !=EINTR)) 
     {
-        perror("Unable to read command from keyboard. Terminating.\n");
-        exit(-1);
+        perror("Unable to read command. Terminating.\n");
+        exit(-1); 
     }
 
     // Null terminate and strip \n.
@@ -339,6 +340,17 @@ void signal_handling()
 	sigemptyset(&handler.sa_mask);
 	sigaction(SIGINT, &handler, NULL);
 }
+void call_signal_handler(int signum)
+{
+    signal(SIGINT, call_signal_handler);
+    printf("1. help\n  Displays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n");
+    printf("2. exit\n  exit: Exits the shell. Takes no other arguments.\n");
+    printf("3. pwd\n  Prints the current working directory. Takes no other arguments.\n");
+    printf("4. cd\n  Changes the current working directory to the directory specified. Takes only one argument.\n");
+    printf("5. history\n  Displays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments.\n");
+    fflush(stdout);
+
+}
 
 /**
  * Main and Execute Commands
@@ -348,6 +360,7 @@ int main(int argc, char *argv[])
     char input_buffer[COMMAND_LENGTH];
     char *tokens[NUM_TOKENS];
     signal_handling();
+    signal(SIGINT, call_signal_handler);
     while (true)
     {
 
@@ -426,7 +439,6 @@ int main(int argc, char *argv[])
         {
             while (waitpid(-1, NULL, WNOHANG) > 0);
         }
-      
     }
     return 0;
 }
