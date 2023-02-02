@@ -156,7 +156,7 @@ int history_command(char *buff, char *tokens[], _Bool *in_background, int comman
 {
     if((command < 1) || (command > command_num) || (command < (command_num - 9)))
     {
-        write(STDERR_FILENO, "Error: Command is out of range. \n", strlen("Error: Command is out of range. \n"));
+        write(STDERR_FILENO, "Error: Command is out of range.\n", strlen("Error: Command is out of range.\n"));
         return 1;
     }
 
@@ -166,15 +166,23 @@ int history_command(char *buff, char *tokens[], _Bool *in_background, int comman
 
     if(tok == 0)
     {
-        write(STDERR_FILENO, "Error: Unable to retrieve command from history. \n", strlen("Error: Unable to retrieve command from history. \n"));
+        write(STDERR_FILENO, "Error: Unable to retrieve command from history.\n", strlen("Error: Unable to retrieve command from history.\n"));
         return 1;
     }
     
-    *in_background = false;
 	if (strcmp(tokens[tok - 1], "/finish") == 0) {
-		*in_background = true;
 		tokens[tok - 1] = 0;
 	}
+    //add command to history
+    int command_number=command_num % HISTORY_DEPTH;
+    char char_arr[1024];
+    sprintf(char_arr, "%s", tokens[0]);
+    strcat(char_arr, " ");   
+    if (tokens[1] !=NULL)
+    {
+        strcat(char_arr,tokens[1]); 
+    }
+    strcpy(history[command_number], char_arr); 
     // add to history
     write(STDOUT_FILENO, history[(command - 1) % HISTORY_DEPTH], strlen(history[(command - 1) % HISTORY_DEPTH]));
     write(STDOUT_FILENO, "\n", strlen("\n"));
@@ -203,7 +211,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         //if chdir returns error
         if (chdir(tokens[1])!=0)
         {
-            write(STDOUT_FILENO, "Error: Could not change directory.", strlen("Error: Could not change directory."));
+            write(STDOUT_FILENO, "Error: Could not change directory.\n", strlen("Error: Could not change directory.\n"));
         }
         //ADD COMMAND TO THE HISTORY
         if (tokens[1]!=NULL)
@@ -225,10 +233,11 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         if (current_dir !=NULL)
         {
             write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
+            write(STDOUT_FILENO, "\n", strlen("\n"));
         } 
         else 
         {
-            write(STDOUT_FILENO, "Error: Could not display current directory.", strlen("Error: Could not display current directory."));
+            write(STDOUT_FILENO, "Error: Could not display current directory.\n", strlen("Error: Could not display current directory.\n"));
         }
         //add command to the history 
         int command_number=command_num % HISTORY_DEPTH; 
@@ -246,11 +255,11 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         }
         if ((tokens[1])== NULL)
         {
-            write(STDOUT_FILENO, "1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n", strlen("1. help\nDisplays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n"));
-            write(STDOUT_FILENO, "2. exit\nexit: Exits the shell. Takes no other arguments.\n", strlen("2. exit\n exit: Exits the shell. Takes no other arguments.\n"));
-            write(STDOUT_FILENO, "3. pwd\nPrints the current working directory. Takes no other arguments.\n", strlen("3. pwd\nPrints the current working directory. Takes no other arguments.\n"));
-            write(STDOUT_FILENO, "4. cd\nChanges the current working directory to the directory specified. Takes only one argument.\n", strlen("4. cd\nChanges the current working directory to the directory specified. Takes only one argument.\n"));
-            write(STDOUT_FILENO, "5. history\nDisplays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments.", strlen("5. history\nDisplays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments."));
+            write(STDOUT_FILENO, "1. help\n  Displays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n", strlen("1. help\n  Displays information about the passed command. If no argument provided then it displays all the commands if no argument is provided. Takes only one argument.\n"));
+            write(STDOUT_FILENO, "2. exit\n  exit: Exits the shell. Takes no other arguments.\n", strlen("2. exit\n  exit: Exits the shell. Takes no other arguments.\n"));
+            write(STDOUT_FILENO, "3. pwd\n  Prints the current working directory. Takes no other arguments.\n", strlen("3. pwd\n  Prints the current working directory. Takes no other arguments.\n"));
+            write(STDOUT_FILENO, "4. cd\n  Changes the current working directory to the directory specified. Takes only one argument.\n", strlen("4. cd\n  Changes the current working directory to the directory specified. Takes only one argument.\n"));
+            write(STDOUT_FILENO, "5. history\n  Displays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments.\n", strlen("5. history\n  Displays the 10 most recent commands entered. If less than 10 commands were entered then only those are displayed. Takes no other arguments.\n"));
 
         }
         else if (strcmp(tokens[1], "exit") == 0)
@@ -272,7 +281,7 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
         else 
         {
             char arr[100];
-            sprintf(arr, "%s", tokens[1]);
+            sprintf(arr, "'%s'", tokens[1]);
             strcat(arr, " is an external command.\n"); 
             write(STDOUT_FILENO,(arr), strlen(arr));
         }
@@ -294,14 +303,14 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
     {
         if(strlen(tokens[0]) > 1)
         {
-            if(tokens[0][1] != '!')
+            if(tokens[0][1] == '!')
             {
-                int tok = atoi(&(tokens[0][1]));    // !
-                // run nth history command
-                return(history_command(buff, tokens, in_background, tok));
+                // run most recent history command
+                return (history_command(buff, tokens, in_background, command_num));
             }
-            // run most recent history command
-            return (history_command(buff, tokens, in_background, command_num));
+            int tok = atoi(&(tokens[0][1]));    // !
+            // run nth history command
+            return(history_command(buff, tokens, in_background, tok));
         }
     }
     //command_num++; 
@@ -310,14 +319,13 @@ int internal_command(char *buff, char *tokens[], _Bool *in_background)
 
 void get_input()
 {
-    write(STDOUT_FILENO, "$ ", strlen("$ "));
     char curr_dir[COMMAND_LENGTH]; 
     char *current_dir = getcwd(curr_dir, sizeof(curr_dir)); 
     if (current_dir !=NULL)
     {
         write(STDOUT_FILENO, curr_dir, strlen(curr_dir));
     } 
-
+    write(STDOUT_FILENO, "$ ", strlen("$ "));
 }
 void handle_SIGINT(int sig)
 {
@@ -361,7 +369,7 @@ int main(int argc, char *argv[])
         }
         if (in_background)
         {
-            write(STDOUT_FILENO, "Run in background.", strlen("Run in background."));
+            write(STDOUT_FILENO, "Run in background.\n", strlen("Run in background.\n"));
         }
         if (input_buffer[0] == '\0' || tokens[0] == NULL) {
 			continue;
@@ -393,6 +401,7 @@ int main(int argc, char *argv[])
         // 0 means to wait for any child process whose process group ID is equal to that of the calling process
         else if (Pid == 0)
         {
+            in_background = true;
             if (execvp(tokens[0], tokens) == -1)
             {
                 write(STDERR_FILENO, "Unsuccesful call to execvp\n", strlen("Unsuccesful call to execvp\n"));
