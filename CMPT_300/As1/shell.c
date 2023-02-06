@@ -22,7 +22,9 @@ int commandCounter = 0;
 int historySpace = 0;
 int itteration = 0;
 int invalidFlag = 0;
+int firstRun = 0;
 
+// Reference for Colors: https://www.codeproject.com/Messages/5685657/Re-cout-in-color-and-perror-revisited.aspx
 void color(char *colorValue)
 {
     if (strcmp(colorValue, "red") == 0)
@@ -63,6 +65,7 @@ int cd(char *path)
     strcpy(previousDirectory, currentDirectory);
     return chdir(path);
 }
+
 char *pwd()
 {
     memset(currentDirectory, 0, PATH_MAX);
@@ -253,18 +256,14 @@ int main(int argc, char *argv[])
             writeString(currentDirectory, "header");
             writeString("$ ", "header");
         }
+        if (!firstRun)
+        {
+            memset(previousDirectory, 0, PATH_MAX);
+            strcpy(previousDirectory, currentDirectory);
+            firstRun = 1;
+        }
         _Bool in_background = false;
         read_command(input_buffer, tokens, &in_background);
-
-        /*DEBUG: Dump out arguments:
-        for (int i = 0; tokens[i] != NULL; i++) {
-          write(STDOUT_FILENO, "   Token: ", strlen("   Token: "));
-          write(STDOUT_FILENO, tokens[i], strlen(tokens[i]));
-          write(STDOUT_FILENO, "\n", strlen("\n"));
-        }
-        if (in_background) {
-          write(STDOUT_FILENO, "Run in background.", strlen("Run in background."));
-       } */
 
         if (invalidFlag)
             continue;
@@ -323,7 +322,6 @@ int main(int argc, char *argv[])
         {
             addToHistory(tokens);
             commandCounter++;
-
             if (strcmp(tokens[0], "exit") == 0)
             {
                 if (tokens[1] == NULL)
@@ -437,7 +435,6 @@ int main(int argc, char *argv[])
             }
             else
             {
-                // Reference for Colors: https://www.codeproject.com/Messages/5685657/Re-cout-in-color-and-perror-revisited.aspx
                 pid_t process = fork();
                 if (process < 0)
                 {
