@@ -16,10 +16,10 @@ void bbuff_init(void)
 void bbuff_blocking_insert(void *item)
 {
     // insert item into buffer
-    mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex);
     buffer[position] = item;
     position = (position + 1) % BUFFER_SIZE;
-    mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex);
 }
 
 void *bbuff_blocking_extract(void)
@@ -28,11 +28,11 @@ void *bbuff_blocking_extract(void)
     if (bbuff_is_empty())
         return NULL;
     // extract item from buffer
-    mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex);
     void *item = buffer[position];
     buffer[position] = NULL;
     position--; // MIGHT USE:   position = (position - 1) % BUFFER_SIZE;
-    mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex);
     return item;
 }
 
