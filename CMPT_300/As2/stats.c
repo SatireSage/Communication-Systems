@@ -33,6 +33,8 @@ void stats_cleanup(void)
     // free memory and prevent dangling pointers
     free(factories);
     factories = NULL;
+    // Unlock mutex before destroying
+    pthread_mutex_unlock(&mutex);
     // Destroy mutex
     pthread_mutex_destroy(&mutex);
 }

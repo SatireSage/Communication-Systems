@@ -22,6 +22,8 @@ void bbuff_cleanup(void)
     // Destroy semaphores
     sem_destroy(&full_slots);
     sem_destroy(&empty_slots);
+    // Unlock mutex before destroying
+    pthread_mutex_unlock(&mutex);
     // Destroy mutex
     pthread_mutex_destroy(&mutex);
 }
