@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string.h>
+#include <pthread.h>
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 struct Myalloc
 {
   enum allocation_algorithm aalgorithm;
@@ -22,6 +27,8 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   myalloc.memory = malloc((size_t)myalloc.size);
 
   // Add some other initialization
+  pthread_mutex_init(&mutex, NULL);
+  memset(myalloc.memory, 0, (size_t)myalloc.size);
 }
 
 void destroy_allocator()
