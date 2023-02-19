@@ -72,6 +72,20 @@ void *allocate(int _size)
   else if (myalloc.aalgorithm == WORST_FIT)
     sort_list_descending(&myalloc.free_mem); // Sort the free memory list in descending order -- Used for worst fit
 
+  // Find the first node in the free memory list that has enough space to allocate
+  if (myalloc.aalgorithm == FIRST_FIT)
+  {
+    // TODO: Implement first fit
+  }
+  else if (myalloc.aalgorithm == BEST_FIT)
+  {
+    // TODO: Implement best fit
+  }
+  else if (myalloc.aalgorithm == WORST_FIT)
+  {
+    // TODO: Implement worst fit
+  }
+
   pthread_mutex_unlock(&mutex); // Unlock mutex after allocating memory
   return ptr;
 }
@@ -83,6 +97,12 @@ void deallocate(void *_ptr)
   // Free allocated memory
   // Note: _ptr points to the user-visible memory. The size information is
   // stored at (char*)_ptr - 8.
+
+  pthread_mutex_lock(&mutex); // Lock mutex before allocating memory
+
+  // TODO: Implement deallocate
+
+  pthread_mutex_unlock(&mutex); // Unlock mutex after allocating memory
 }
 
 int compact_allocation(void **_before, void **_after)
@@ -92,6 +112,11 @@ int compact_allocation(void **_before, void **_after)
   // compact allocated memory
   // update _before, _after and compacted_size
 
+  pthread_mutex_lock(&mutex); // Lock mutex before allocating memory
+
+  // TODO: Implement compact_allocation
+
+  pthread_mutex_unlock(&mutex); // Unlock mutex after allocating memory
   return compacted_size;
 }
 
@@ -99,10 +124,19 @@ int available_memory()
 {
   int available_memory_size = 0;
   // Calculate available memory size
+  pthread_mutex_lock(&mutex); // Lock mutex before accessing free memory list
+  struct list *current = myalloc.free_mem;
+  while (current != NULL)
+  {
+    available_memory_size += (int)*(long *)(current->data_chunk - 8) - 8;
+    current = current->next_chunk;
+  }
+  pthread_mutex_unlock(&mutex); // Unlock mutex after accessing free memory list
   return available_memory_size;
 }
 
 void get_statistics(struct Stats *_stat)
 {
   // Populate struct Stats with the statistics
+  // TODO: Implement get_statistics
 }
