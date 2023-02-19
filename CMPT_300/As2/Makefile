@@ -2,9 +2,9 @@ SOURCES = candykids.c bbuff.c stats.c
 TARGET = candykids
 
 CC_C = gcc
-CFLAGS = -Wall -Werror -Wshadow -pthread -lrt -g
+CFLAGS = -Wall -g -Werror -Wshadow -pthread -lrt -std=c99 -D_POSIX_C_SOURCE=200809L
 
-all: $(SOURCES)
+all: clean $(SOURCES)
 	$(CC_C) $(CFLAGS) -o $(TARGET) $(SOURCES)
 
 clean:
