@@ -31,8 +31,15 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   myalloc.memory = malloc((size_t)myalloc.size);
 
   // Add some other initialization
-  pthread_mutex_init(&mutex, NULL);
-  memset(myalloc.memory, 0, (size_t)myalloc.size);
+
+  pthread_mutex_init(&mutex, NULL);                // Initialize mutex
+  memset(myalloc.memory, 0, (size_t)myalloc.size); // memory is initialized to 0
+
+  myalloc.allocated_mem = NULL; // Initialize allocated memory list to NULL
+  myalloc.free_mem = NULL;      // Initialize free memory list to NULL
+
+  struct list *node = create_node(myalloc.memory); // Create a node for the free memory
+  add_node(&myalloc.free_mem, node);               // Add the node to the free memory list
 }
 
 void destroy_allocator()
@@ -40,6 +47,10 @@ void destroy_allocator()
   free(myalloc.memory);
 
   // free other dynamic allocated memory to avoid memory leak
+
+  destroy_list(&myalloc.allocated_mem); // Destroy allocated memory list
+  destroy_list(&myalloc.free_mem);      // Destroy free memory list
+  pthread_mutex_destroy(&mutex);        // Destroy mutex
 }
 
 void *allocate(int _size)
