@@ -55,12 +55,11 @@ void remove_node(struct list **head, struct list *node)
 
 void destroy_list(struct list **head)
 {
-    struct list *temp = *head;
-    while (temp != NULL)
+    while (*head != NULL)
     {
-        struct list *temp2 = temp;
-        temp = temp->next_chunk;
-        free(temp2);
+        struct list *temp = *head;
+        *head = (*head)->next_chunk;
+        free(temp);
     }
     *head = NULL;
 }

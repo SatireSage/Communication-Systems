@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Included list structure for the free and allocated memory lists
 #include "list.h"
 
+// Included additional header files
 #include <string.h>
 #include <pthread.h>
 
@@ -17,8 +19,7 @@ struct Myalloc
   void *memory;
   // Some other data members you want,
   // such as lists to record allocated/free memory
-  struct list *allocated_mem;
-  struct list *free_mem;
+  struct list *allocated_mem, *free_mem; // Lists to record allocated/free memory
 };
 
 struct Myalloc myalloc;
@@ -50,6 +51,7 @@ void destroy_allocator()
 
   destroy_list(&myalloc.allocated_mem); // Destroy allocated memory list
   destroy_list(&myalloc.free_mem);      // Destroy free memory list
+  pthread_mutex_unlock(&mutex);         // Unlock mutex before destroying
   pthread_mutex_destroy(&mutex);        // Destroy mutex
 }
 
