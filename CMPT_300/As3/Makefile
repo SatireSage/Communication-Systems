@@ -1,5 +1,5 @@
 TARGET = myalloc
-OBJS = main.o myalloc.o
+OBJS = main.o myalloc.o list.o
 
 CFLAGS = -Wall -g -std=c99 -D_POSIX_C_SOURCE=199309L -pthread
 CC = gcc

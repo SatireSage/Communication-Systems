@@ -66,8 +66,6 @@ void *allocate(int _size)
 
   pthread_mutex_lock(&mutex); // Lock mutex before allocating memory
 
-  struct list *node = create_node(ptr); // Create a node for the allocated memory
-
   // Sort the free memory list according to the allocation algorithm
   if (myalloc.aalgorithm == FIRST_FIT || myalloc.aalgorithm == BEST_FIT)
     sort_list_ascending(&myalloc.free_mem); // Sort the free memory list in ascending order -- Used for first fit and best fit
@@ -75,7 +73,6 @@ void *allocate(int _size)
     sort_list_descending(&myalloc.free_mem); // Sort the free memory list in descending order -- Used for worst fit
 
   pthread_mutex_unlock(&mutex); // Unlock mutex after allocating memory
-
   return ptr;
 }
 

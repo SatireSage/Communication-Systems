@@ -2,6 +2,14 @@
 #define __LIST_H__
 
 #include <stddef.h>
+#include <stdlib.h>
+
+struct list
+{
+    void *data_chunk;
+    struct list *next_chunk;
+    struct list *prev_chunk;
+};
 
 struct list *create_node(void *chunk);                   // Create a node for the free memory
 void add_node(struct list **head, struct list *node);    // Add the node to the free memory list

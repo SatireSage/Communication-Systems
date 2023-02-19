@@ -1,12 +1,5 @@
 #include "list.h"
 
-struct list
-{
-    void *data_chunk;
-    struct list *next_chunk;
-    struct list *prev_chunk;
-};
-
 struct list *create_node(void *chunk)
 {
     struct list *new_node = malloc(sizeof(struct list));
