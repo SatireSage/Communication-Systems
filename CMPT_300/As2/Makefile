@@ -2,8 +2,7 @@ SOURCES = candykids.c bbuff.c stats.c
 TARGET = candykids
 
 CC_C = gcc
-CFLAGS = -Wall -Werror -Wshadow -pthread
-#CFLAGS += -lrt -lpthread
+CFLAGS = -Wall -Werror -Wshadow -lpthread -lrt -g
 
 all: $(SOURCES)
 	$(CC_C) $(CFLAGS) -o $(TARGET) $(SOURCES)
