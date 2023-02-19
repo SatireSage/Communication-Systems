@@ -122,8 +122,8 @@ int available_memory()
   struct nodeStruct *current = myalloc.free_mem;
   while (current != NULL)
   {
-    available_memory_size += (int)*(long *)(current->data - 8) - 8;
-    current = current->data;
+    available_memory_size += (int)*(long *)(current->data - 8);
+    current = current->next;
   }
   pthread_mutex_unlock(&mutex); // Unlock mutex after accessing free memory list
   return available_memory_size;
