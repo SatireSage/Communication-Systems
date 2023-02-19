@@ -1,108 +1,119 @@
 #include "list.h"
 
-struct list *create_node(void *chunk)
+/*
+ * Allocate memory for a node of type struct nodeStruct and initialize
+ * it with the value item. Return a pointer to the new node.
+ */
+struct nodeStruct *List_createNode(void *chunk)
 {
-    struct list *new_node = malloc(sizeof(struct list));
-    new_node->data_chunk = chunk;
-    new_node->next_chunk = NULL;
-    new_node->prev_chunk = NULL;
-    return new_node;
+    struct nodeStruct *node = malloc(sizeof(struct nodeStruct));
+    node->data = chunk;
+    node->next = NULL;
+    return node;
 }
 
-void add_node(struct list **head, struct list *node)
+/*
+ * Insert node at the head of the list.
+ */
+void List_insertHead(struct nodeStruct **headRef, struct nodeStruct *chunk)
 {
-    if (*head == NULL)
-        *head = node;
+    if (*headRef == NULL)
+        *headRef = chunk;
     else
     {
-        struct list *temp = *head;
-        while (temp->next_chunk != NULL)
-            temp = temp->next_chunk;
-        temp->next_chunk = node;
-        node->prev_chunk = temp;
+        chunk->next = *headRef;
+        *headRef = chunk;
     }
 }
 
-void remove_node(struct list **head, struct list *node)
+/*
+ * Insert node after the tail of the list.
+ */
+void List_insertTail(struct nodeStruct **headRef, struct nodeStruct *chunk)
 {
-    if (*head == node)
-    {
-        if (node->next_chunk == NULL)
-            *head = NULL;
-        else
-        {
-            *head = node->next_chunk;
-            node->next_chunk->prev_chunk = NULL;
-        }
-    }
+    if (*headRef == NULL)
+        *headRef = chunk;
     else
     {
-        struct list *temp = *head;
-        while (temp->next_chunk != node)
-            temp = temp->next_chunk;
-        temp->next_chunk = node->next_chunk;
-        node->next_chunk->prev_chunk = temp;
+        struct nodeStruct *current = *headRef;
+        while (current->next != NULL)
+            current = current->next;
+        current->next = chunk;
     }
-    free(node);
 }
 
-void destroy_list(struct list **head)
+/*
+ * Delete the entire list and free memory allocated to each node.
+ */
+void List_destroy(struct nodeStruct **headRef)
 {
-    while (*head != NULL)
+    while (*headRef != NULL)
     {
-        struct list *temp = *head;
-        *head = (*head)->next_chunk;
+        struct nodeStruct *temp = *headRef;
+        *headRef = (*headRef)->next;
         free(temp);
     }
-    *head = NULL;
+    *headRef = NULL;
 }
 
-struct list *list_search(struct list *head, void *chunk)
+/*
+ * Return the first node holding the value item, return NULL if none found
+ */
+struct nodeStruct *List_findNode(struct nodeStruct *head, void *node)
 {
-    struct list *temp = head;
+    struct nodeStruct *temp = head;
     while (temp != NULL)
     {
-        if (temp->data_chunk == chunk)
+        if (temp->data == node)
             return temp;
-        temp = temp->next_chunk;
+        temp = temp->next;
     }
     return NULL;
 }
 
-void sort_list_ascending(struct list **head)
+/*
+ * Delete node from the list and free memory allocated to it.
+ * This function assumes that node has been properly set to a valid node
+ * in the list. For example, the client code may have found it by calling
+ * List_findNode(). If the list contains only one node, the head of the list
+ * should be set to NULL.
+ */
+void List_deleteNode(struct nodeStruct **headRef, struct nodeStruct *chunk)
 {
-    while (*head != NULL)
+    if (*headRef == chunk)
+        if (chunk->next == NULL)
+            *headRef = NULL;
+        else
+            *headRef = chunk->next;
+    else
     {
-        struct list *temp = *head;
-        while (temp->next_chunk != NULL)
-        {
-            if (temp->data_chunk > temp->next_chunk->data_chunk)
-            {
-                void *temp_chunk = temp->data_chunk;
-                temp->data_chunk = temp->next_chunk->data_chunk;
-                temp->next_chunk->data_chunk = temp_chunk;
-            }
-            temp = temp->next_chunk;
-        }
-        *head = temp;
+        struct nodeStruct *current = *headRef;
+        while (current->next != chunk)
+            current = current->next;
+        current->next = chunk->next;
     }
+    free(chunk);
 }
 
-void sort_list_descending(struct list **head)
+/*
+ * Sort the list in ascending order based on the item field.
+ */
+void List_sort(struct nodeStruct **headRef)
 {
-    while (*head != NULL)
+    struct nodeStruct *current = *headRef;
+    while (current != NULL)
     {
-        struct list *temp = *head;
-        while (temp->next_chunk != NULL)
+        struct nodeStruct *next = current->next;
+        while (next != NULL)
         {
-            if (temp->data_chunk < temp->next_chunk->data_chunk)
+            if (current->data > next->data)
             {
-                void *temp_chunk = temp->data_chunk;
-                temp->data_chunk = temp->next_chunk->data_chunk;
-                temp->next_chunk->data_chunk = temp_chunk;
+                void *temp = current->data;
+                current->data = next->data;
+                next->data = temp;
             }
-            temp = temp->next_chunk;
+            next = next->next;
         }
-        *head = temp;
+        current = current->next;
     }
 }

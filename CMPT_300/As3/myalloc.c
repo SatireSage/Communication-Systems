@@ -19,7 +19,7 @@ struct Myalloc
   void *memory;
   // Some other data members you want,
   // such as lists to record allocated/free memory
-  struct list *allocated_mem, *free_mem; // Lists to record allocated/free memory
+  struct nodeStruct *allocated_mem, *free_mem; // Lists to record allocated/free memory
 };
 
 struct Myalloc myalloc;
@@ -39,8 +39,8 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   myalloc.allocated_mem = NULL; // Initialize allocated memory list to NULL
   myalloc.free_mem = NULL;      // Initialize free memory list to NULL
 
-  struct list *node = create_node(myalloc.memory); // Create a node for the free memory
-  add_node(&myalloc.free_mem, node);               // Add the node to the free memory list
+  struct nodeStruct *node = List_createNode(myalloc.memory); // Create a node for the free memory
+  List_insertHead(&myalloc.free_mem, node);                  // Add the node to the free memory list
 }
 
 void destroy_allocator()
@@ -49,8 +49,8 @@ void destroy_allocator()
 
   // free other dynamic allocated memory to avoid memory leak
 
-  destroy_list(&myalloc.allocated_mem); // Destroy allocated memory list
-  destroy_list(&myalloc.free_mem);      // Destroy free memory list
+  List_destroy(&myalloc.allocated_mem); // Destroy allocated memory list
+  List_destroy(&myalloc.free_mem);      // Destroy free memory list
   pthread_mutex_unlock(&mutex);         // Unlock mutex before destroying
   pthread_mutex_destroy(&mutex);        // Destroy mutex
 }
@@ -65,12 +65,6 @@ void *allocate(int _size)
   // ptr = address of allocated memory
 
   pthread_mutex_lock(&mutex); // Lock mutex before allocating memory
-
-  // Sort the free memory list according to the allocation algorithm
-  if (myalloc.aalgorithm == FIRST_FIT || myalloc.aalgorithm == BEST_FIT)
-    sort_list_ascending(&myalloc.free_mem); // Sort the free memory list in ascending order -- Used for first fit and best fit
-  else if (myalloc.aalgorithm == WORST_FIT)
-    sort_list_descending(&myalloc.free_mem); // Sort the free memory list in descending order -- Used for worst fit
 
   // Find the first node in the free memory list that has enough space to allocate
   if (myalloc.aalgorithm == FIRST_FIT)
@@ -125,11 +119,11 @@ int available_memory()
   int available_memory_size = 0;
   // Calculate available memory size
   pthread_mutex_lock(&mutex); // Lock mutex before accessing free memory list
-  struct list *current = myalloc.free_mem;
+  struct nodeStruct *current = myalloc.free_mem;
   while (current != NULL)
   {
-    available_memory_size += (int)*(long *)(current->data_chunk - 8) - 8;
-    current = current->next_chunk;
+    available_memory_size += (int)*(long *)(current->data - 8) - 8;
+    current = current->data;
   }
   pthread_mutex_unlock(&mutex); // Unlock mutex after accessing free memory list
   return available_memory_size;
