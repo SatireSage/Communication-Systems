@@ -58,9 +58,23 @@ void destroy_allocator()
 void *allocate(int _size)
 {
   void *ptr = NULL;
+  if (_size <= 0) // Invalid size
+    return ptr;
 
   // Allocate memory from myalloc.memory
   // ptr = address of allocated memory
+
+  pthread_mutex_lock(&mutex); // Lock mutex before allocating memory
+
+  struct list *node = create_node(ptr); // Create a node for the allocated memory
+
+  // Sort the free memory list according to the allocation algorithm
+  if (myalloc.aalgorithm == FIRST_FIT || myalloc.aalgorithm == BEST_FIT)
+    sort_list_ascending(&myalloc.free_mem); // Sort the free memory list in ascending order -- Used for first fit and best fit
+  else if (myalloc.aalgorithm == WORST_FIT)
+    sort_list_descending(&myalloc.free_mem); // Sort the free memory list in descending order -- Used for worst fit
+
+  pthread_mutex_unlock(&mutex); // Unlock mutex after allocating memory
 
   return ptr;
 }

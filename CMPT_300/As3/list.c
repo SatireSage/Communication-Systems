@@ -75,3 +75,41 @@ struct list *list_search(struct list *head, void *chunk)
     }
     return NULL;
 }
+
+void sort_list_ascending(struct list **head)
+{
+    while (*head != NULL)
+    {
+        struct list *temp = *head;
+        while (temp->next_chunk != NULL)
+        {
+            if (temp->data_chunk > temp->next_chunk->data_chunk)
+            {
+                void *temp_chunk = temp->data_chunk;
+                temp->data_chunk = temp->next_chunk->data_chunk;
+                temp->next_chunk->data_chunk = temp_chunk;
+            }
+            temp = temp->next_chunk;
+        }
+        *head = temp;
+    }
+}
+
+void sort_list_descending(struct list **head)
+{
+    while (*head != NULL)
+    {
+        struct list *temp = *head;
+        while (temp->next_chunk != NULL)
+        {
+            if (temp->data_chunk < temp->next_chunk->data_chunk)
+            {
+                void *temp_chunk = temp->data_chunk;
+                temp->data_chunk = temp->next_chunk->data_chunk;
+                temp->next_chunk->data_chunk = temp_chunk;
+            }
+            temp = temp->next_chunk;
+        }
+        *head = temp;
+    }
+}
