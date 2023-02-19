@@ -40,7 +40,7 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   myalloc.free_mem = NULL;      // Initialize free memory list to NULL
 
   struct nodeStruct *node = List_createNode(myalloc.memory); // Create a node for the free memory
-  List_insertHead(&myalloc.free_mem, node);                  // Add the node to the free memory list
+  List_insert(&myalloc.free_mem, node);                      // Add the node to the free memory list
 }
 
 void destroy_allocator()
