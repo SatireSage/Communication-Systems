@@ -13,32 +13,28 @@ struct nodeStruct *List_createNode(void *chunk)
 }
 
 /*
- * Insert node at the head of the list.
+ * Insert node into the list in sorted order. The list is sorted in ascending order.
  */
-void List_insertHead(struct nodeStruct **headRef, struct nodeStruct *chunk)
+void List_insert(struct nodeStruct **headRef, struct nodeStruct *node)
 {
-    if (*headRef == NULL)
-        *headRef = chunk;
-    else
+    // If the list is empty or the node should be inserted at the head then insert at the head
+    if (*headRef == NULL || (*headRef)->data > node->data)
     {
-        chunk->next = *headRef;
-        *headRef = chunk;
+        node->next = *headRef;
+        *headRef = node;
     }
-}
-
-/*
- * Insert node after the tail of the list.
- */
-void List_insertTail(struct nodeStruct **headRef, struct nodeStruct *chunk)
-{
-    if (*headRef == NULL)
-        *headRef = chunk;
     else
     {
         struct nodeStruct *current = *headRef;
-        while (current->next != NULL)
-            current = current->next;
-        current->next = chunk;
+        struct nodeStruct *next = (*headRef)->next;
+        // Find the node after which the new node should be inserted and insert it
+        while (next != NULL && next->data < node->data)
+        {
+            current = next;
+            next = next->next;
+        }
+        current->next = node;
+        current->next->next = next;
     }
 }
 
@@ -62,58 +58,25 @@ void List_destroy(struct nodeStruct **headRef)
 struct nodeStruct *List_findNode(struct nodeStruct *head, void *node)
 {
     struct nodeStruct *temp = head;
-    while (temp != NULL)
-    {
-        if (temp->data == node)
-            return temp;
+    while (temp->data != node)
         temp = temp->next;
-    }
-    return NULL;
+    return temp;
 }
 
 /*
  * Delete node from the list and free memory allocated to it.
- * This function assumes that node has been properly set to a valid node
- * in the list. For example, the client code may have found it by calling
- * List_findNode(). If the list contains only one node, the head of the list
- * should be set to NULL.
  */
-void List_deleteNode(struct nodeStruct **headRef, struct nodeStruct *chunk)
+void List_deleteNode(struct nodeStruct **headRef, struct nodeStruct *node)
 {
-    if (*headRef == chunk)
-        if (chunk->next == NULL)
-            *headRef = NULL;
-        else
-            *headRef = chunk->next;
+    // If the node to be deleted is the head then delete the head
+    if (*headRef == node)
+        *headRef = node->next;
     else
     {
         struct nodeStruct *current = *headRef;
-        while (current->next != chunk)
+        // Find the node before the node to be deleted and delete it to keep the list intact and sorted
+        while (current->next != NULL && current->next != node)
             current = current->next;
-        current->next = chunk->next;
-    }
-    free(chunk);
-}
-
-/*
- * Sort the list in ascending order based on the item field.
- */
-void List_sort(struct nodeStruct **headRef)
-{
-    struct nodeStruct *current = *headRef;
-    while (current != NULL)
-    {
-        struct nodeStruct *next = current->next;
-        while (next != NULL)
-        {
-            if (current->data > next->data)
-            {
-                void *temp = current->data;
-                current->data = next->data;
-                next->data = temp;
-            }
-            next = next->next;
-        }
-        current = current->next;
+        current->next = current->next->next;
     }
 }
