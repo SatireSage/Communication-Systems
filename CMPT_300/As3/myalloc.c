@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "list.h"
+
 #include <string.h>
 #include <pthread.h>
 
@@ -15,6 +17,8 @@ struct Myalloc
   void *memory;
   // Some other data members you want,
   // such as lists to record allocated/free memory
+  struct list *allocated_mem;
+  struct list *free_mem;
 };
 
 struct Myalloc myalloc;
