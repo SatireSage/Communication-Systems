@@ -2,6 +2,9 @@
 #define BBUFF_H
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #define BUFFER_SIZE 10
 

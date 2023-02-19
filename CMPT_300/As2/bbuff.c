@@ -1,7 +1,4 @@
 #include "bbuff.h"
-#include <stddef.h>
-#include <pthread.h>
-#include <semaphore.h>
 
 static void *buffer[BUFFER_SIZE];
 static int position_insert, position_extract;
