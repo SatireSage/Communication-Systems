@@ -33,6 +33,8 @@ void stats_cleanup(void)
     // free memory and prevent dangling pointers
     free(factories);
     factories = NULL;
+    // Destroy mutex
+    pthread_mutex_destroy(&mutex);
 }
 
 void stats_record_produced(int factory_number)

@@ -17,6 +17,15 @@ void bbuff_init(void)
     pthread_mutex_init(&mutex, NULL);
 }
 
+void bbuff_cleanup(void)
+{
+    // Destroy semaphores
+    sem_destroy(&full_slots);
+    sem_destroy(&empty_slots);
+    // Destroy mutex
+    pthread_mutex_destroy(&mutex);
+}
+
 void bbuff_blocking_insert(void *item)
 {
     // wait for empty slot and lock mutex
