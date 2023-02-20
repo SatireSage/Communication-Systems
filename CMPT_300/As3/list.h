@@ -4,16 +4,21 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-struct nodeStruct
+struct headerBlock
 {
-    void *data;
-    struct nodeStruct *next;
+    size_t size;
 };
 
-struct nodeStruct *List_createNode(void *chunk);                             // Create a node for the free memory
-void List_insert(struct nodeStruct **headRef, struct nodeStruct *chunk);     // Add the node to the list
-void List_destroy(struct nodeStruct **headRef);                              // Destroy the list passed in
-struct nodeStruct *List_findNode(struct nodeStruct *head, void *node);       // Search for a node in the list
-void List_deleteNode(struct nodeStruct **headRef, struct nodeStruct *chunk); // Delete a node from the list
+struct memoryBlock
+{
+    void *size;
+    struct memoryBlock *next;
+};
+
+struct memoryBlock *List_createBlock(void *chunk);
+void List_insertBlock(struct memoryBlock **headRef, struct memoryBlock *chunk);
+struct memoryBlock *List_findBlock(struct memoryBlock *head, void *chunk);
+void List_deleteBlock(struct memoryBlock **headRef, struct memoryBlock *chunk);
+void List_destroy(struct memoryBlock **headRef);
 
 #endif

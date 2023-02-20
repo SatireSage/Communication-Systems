@@ -4,44 +4,74 @@
  * Allocate memory for a node of type struct nodeStruct and initialize
  * it with the value item. Return a pointer to the new node.
  */
-struct nodeStruct *List_createNode(void *chunk)
+struct memoryBlock *List_createBlock(void *chunk)
 {
-    struct nodeStruct *node = malloc(sizeof(struct nodeStruct));
-    node->data = chunk;
+    struct memoryBlock *node = malloc(sizeof(struct memoryBlock));
+    node->size = chunk;
     node->next = NULL;
     return node;
 }
 
 /*
- * Insert node into the list in sorted order. The list is sorted in ascending order.
+ * Insert node into the list in sorted order. The list is sorted order
  */
-void List_insert(struct nodeStruct **headRef, struct nodeStruct *node)
+void List_insertBlock(struct memoryBlock **headRef, struct memoryBlock *chunk)
 {
-    // If the list is empty or the node should be inserted at the head then insert at the head
-    if (*headRef == NULL || (*headRef)->data > node->data)
+    struct memoryBlock *current = *headRef;
+    // If the list is empty or the node to be inserted is smaller than the head then insert it at the head
+    if (current == NULL || chunk->size < current->size)
     {
-        node->next = *headRef;
-        *headRef = node;
+        chunk->next = current;
+        *headRef = chunk;
     }
     else
     {
-        struct nodeStruct *current = *headRef;
-        struct nodeStruct *next = (*headRef)->next;
-        // Find the node after which the new node should be inserted and insert it
-        while (next != NULL && next->data < node->data)
-        {
-            current = next;
-            next = next->next;
-        }
-        current->next = node;
-        current->next->next = next;
+        // Find the node before the node to be inserted and insert it to keep the list intact and sorted
+        while (current->next != NULL && current->next->size < chunk->size)
+            current = current->next;
+        chunk->next = current->next;
+        current->next = chunk;
+    }
+}
+
+/*
+ * Return the first node holding the value item, return NULL if none found
+ */
+struct memoryBlock *List_findBlock(struct memoryBlock *head, void *chunk)
+{
+    struct memoryBlock *temp = head;
+    while (temp != NULL)
+    {
+        if (temp->size == chunk)
+            return temp;
+        temp = temp->next;
+    }
+    return NULL;
+}
+
+/*
+ * Delete node from the list and free memory allocated to it.
+ */
+void List_deleteBlock(struct memoryBlock **headRef, struct memoryBlock *chunk)
+{
+    if (*headRef == chunk)
+        if (chunk->next == NULL)
+            *headRef = NULL;
+        else
+            *headRef = chunk->next;
+    else
+    {
+        struct memoryBlock *current = *headRef;
+        while (current->next != chunk)
+            current = current->next;
+        current->next = chunk->next;
     }
 }
 
 /*
  * Delete the entire list and free memory allocated to each node.
  */
-void List_destroy(struct nodeStruct **headRef)
+void List_destroy(struct memoryBlock **headRef)
 {
     while (*headRef != NULL)
     {
@@ -50,33 +80,4 @@ void List_destroy(struct nodeStruct **headRef)
         free(temp);
     }
     *headRef = NULL;
-}
-
-/*
- * Return the first node holding the value item, return NULL if none found
- */
-struct nodeStruct *List_findNode(struct nodeStruct *head, void *node)
-{
-    struct nodeStruct *temp = head;
-    while (temp->data != node)
-        temp = temp->next;
-    return temp;
-}
-
-/*
- * Delete node from the list and free memory allocated to it.
- */
-void List_deleteNode(struct nodeStruct **headRef, struct nodeStruct *node)
-{
-    // If the node to be deleted is the head then delete the head
-    if (*headRef == node)
-        *headRef = node->next;
-    else
-    {
-        struct nodeStruct *current = *headRef;
-        // Find the node before the node to be deleted and delete it to keep the list intact and sorted
-        while (current->next != NULL && current->next != node)
-            current = current->next;
-        current->next = current->next->next;
-    }
 }

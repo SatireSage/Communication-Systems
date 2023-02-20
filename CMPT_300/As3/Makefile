@@ -5,6 +5,7 @@ CFLAGS = -Wall -g -std=c99 -D_POSIX_C_SOURCE=199309L -pthread
 CC = gcc
 
 all: clean $(TARGET)
+	rm *.o
 
 %.o : %.c
 	$(CC) -c $(CFLAGS) $<
