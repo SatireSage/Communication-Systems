@@ -10,6 +10,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#define HEADER_SIZE sizeof(size_t) // Size of header: 8 bytes (unsigned long)
+
 // Mutex for thread safety of the allocator
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -41,13 +43,13 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   myalloc.free = NULL;      // Initialize free list to NULL
 
   // Add the initial header to the free list
-  struct memoryBlock *chunk = List_createBlock(myalloc.memory + sizeof(struct headerBlock));
+  struct memoryBlock *chunk = List_createBlock(myalloc.memory + HEADER_SIZE);
   List_insertBlock(&myalloc.free, chunk);
 
   // Add the size of header to the memory
-  struct headerBlock *header;
-  header->size = (size_t)myalloc.size - sizeof(struct headerBlock);
-  memcpy(myalloc.memory, header, sizeof(struct headerBlock));
+  struct headerBlock header;
+  header.size = (size_t)myalloc.size - HEADER_SIZE;
+  memcpy(myalloc.memory, &header, HEADER_SIZE);
 }
 
 void destroy_allocator()
@@ -114,7 +116,7 @@ int available_memory()
   struct memoryBlock *current = myalloc.free;
   while (current != NULL)
   {
-    available_memory_size += (int)((struct headerBlock *)(current->size - sizeof(struct headerBlock)))->size;
+    available_memory_size += (int)((struct headerBlock *)(current->size - HEADER_SIZE))->size;
     current = current->next;
   }
   pthread_mutex_unlock(&mutex); // Unlock mutex after calculating
@@ -139,7 +141,7 @@ void get_statistics(struct Stats *_stat)
   // Calculate allocated size and chunks
   while (current_allocated != NULL)
   {
-    allocated_size += (int)((struct headerBlock *)(current_allocated->size - sizeof(struct headerBlock)))->size;
+    allocated_size += (int)((struct headerBlock *)(current_allocated->size - HEADER_SIZE))->size;
     allocated_chunks++;
     current_allocated = current_allocated->next;
   }
@@ -147,8 +149,8 @@ void get_statistics(struct Stats *_stat)
   // Calculate free size and chunks
   while (current_free != NULL)
   {
-    free_size += (int)((struct headerBlock *)(current_free->size - sizeof(struct headerBlock)))->size;
-    int temp = (int)((struct headerBlock *)(current_free->size - sizeof(struct headerBlock)))->size;
+    free_size += (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
+    int temp = (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
     if (temp < smallest_free_chunk_size)
       smallest_free_chunk_size = temp;
     if (temp > largest_free_chunk_size)

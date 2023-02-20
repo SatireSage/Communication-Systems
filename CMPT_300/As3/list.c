@@ -75,7 +75,7 @@ void List_destroy(struct memoryBlock **headRef)
 {
     while (*headRef != NULL)
     {
-        struct nodeStruct *temp = *headRef;
+        struct memoryBlock *temp = *headRef;
         *headRef = (*headRef)->next;
         free(temp);
     }
