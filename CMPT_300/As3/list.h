@@ -17,4 +17,8 @@ void List_deleteBlock(struct memoryBlock **headRef, struct memoryBlock *chunk);
 void List_freeBlock(struct memoryBlock **headRef, struct memoryBlock *chunk);
 void List_destroy(struct memoryBlock **headRef);
 
+// Helper functions to get size of memory block
+size_t List_getSize(void *size);
+int List_getSizeInt(void *size);
+
 #endif

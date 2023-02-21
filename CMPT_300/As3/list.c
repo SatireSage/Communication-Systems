@@ -101,3 +101,19 @@ void List_destroy(struct memoryBlock **headRef)
     }
     *headRef = NULL;
 }
+
+/*
+ * Return the size of the chunk
+ */
+size_t List_getSize(void *size)
+{
+    return *(size_t *)(size);
+}
+
+/*
+ * Return the size of the chunk as integer
+ */
+int List_getSizeInt(void *size)
+{
+    return (int)*(size_t *)(size);
+}

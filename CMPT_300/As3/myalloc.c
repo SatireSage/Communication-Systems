@@ -65,20 +65,20 @@ void *allocator(int _size, struct memoryBlock *block)
 {
   size_t remainder_size = 0;
   // Check if the size of the block is greater than the size of the memory requested plus the size of the header
-  if (*(size_t *)(block->size - HEADER_SIZE) >= _size + HEADER_SIZE)
+  if (List_getSize(block->size - HEADER_SIZE) >= _size + HEADER_SIZE)
   {
-    size_t header = *(size_t *)(block->size - HEADER_SIZE) - _size - HEADER_SIZE;
+    size_t header = List_getSize(block->size - HEADER_SIZE) - _size - HEADER_SIZE;
     memcpy(block->size + _size, &header, HEADER_SIZE);
     struct memoryBlock *newnode = List_createBlock(block->size + _size + HEADER_SIZE);
     List_insertBlock(&myalloc.free, newnode);
   }
   // If the size of the block is less than the size of the memory requested plus the size of the header, then we set the remainder to the size of the block minus the size of the memory requested
   else
-    remainder_size = *(size_t *)(block->size - HEADER_SIZE) - _size;
+    remainder_size = List_getSize(block->size - HEADER_SIZE) - _size;
   // Remove block from free list and add to allocated list
   List_deleteBlock(&myalloc.free, block);
   List_insertBlock(&myalloc.allocated, block);
-  // Set the header
+  // Set the header of the allocated block to the size of the memory requested plus the remainder
   *(size_t *)(block->size - HEADER_SIZE) = _size + remainder_size;
   return block->size;
 }
@@ -96,7 +96,8 @@ void *allocate(int _size)
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested
-      if ((int)*(size_t *)(current->size - HEADER_SIZE) >= _size)
+
+      if (List_getSizeInt(current->size - HEADER_SIZE) >= _size)
       {
         ptr = allocator(_size, current);
         break;
@@ -111,9 +112,9 @@ void *allocate(int _size)
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested and if the fragment is larger than the current worst fragment
-      if (*(size_t *)(current->size - HEADER_SIZE) >= _size && (int)*(size_t *)(current->size - HEADER_SIZE) >= _size + fragment_size)
+      if (List_getSize(current->size - HEADER_SIZE) >= _size && List_getSizeInt(current->size - HEADER_SIZE) >= _size + fragment_size)
       {
-        fragment_size = *(size_t *)(current->size - HEADER_SIZE) - _size;
+        fragment_size = List_getSize(current->size - HEADER_SIZE) - _size;
         worst_block = current;
       }
       current = current->next;
@@ -129,9 +130,9 @@ void *allocate(int _size)
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested and if the fragment is smaller than the current best fragment
-      if (*(size_t *)(current->size - HEADER_SIZE) >= _size && (int)*(size_t *)(current->size - HEADER_SIZE) <= _size + fragment_size)
+      if (List_getSize(current->size - HEADER_SIZE) >= _size && List_getSizeInt(current->size - HEADER_SIZE) <= _size + fragment_size)
       {
-        fragment_size = *(size_t *)(current->size - HEADER_SIZE) - _size;
+        fragment_size = List_getSize(current->size - HEADER_SIZE) - _size;
         best_block = current;
       }
       current = current->next;
@@ -151,7 +152,7 @@ void deallocate(void *_ptr)
   // Free allocated memory
   // Note: _ptr points to the user-visible memory. The size information is
   // stored at (char*)_ptr - HEADER_SIZE.
-  int _size = (int)*(size_t *)((char *)_ptr - HEADER_SIZE); // Get the size of the memory block
+  int _size = List_getSizeInt((char *)_ptr - HEADER_SIZE); // Get the size of the memory block
 
   pthread_mutex_lock(&mutex);                                         // Lock mutex before deallocation
   struct memoryBlock *temp = List_findBlock(myalloc.allocated, _ptr); // Find the block in the allocated list
@@ -168,11 +169,10 @@ void deallocate(void *_ptr)
   struct memoryBlock *current = myalloc.free;
   while (current->next != NULL)
   {
-    size_t current_size = *(size_t *)(current->size - HEADER_SIZE) + HEADER_SIZE;
+    size_t current_size = List_getSize(current->size - HEADER_SIZE) + HEADER_SIZE;
     if (current->size + current_size == current->next->size)
     {
-      size_t next_size = *(size_t *)(current->next->size - HEADER_SIZE) + HEADER_SIZE;
-      *(size_t *)(current->size - HEADER_SIZE) += next_size;
+      *(size_t *)(current->size - HEADER_SIZE) += List_getSize(current->next->size - HEADER_SIZE) + HEADER_SIZE;
       List_freeBlock(&myalloc.free, List_findBlock(myalloc.free, current->next->size));
       continue;
     }
@@ -196,14 +196,14 @@ int compact_allocation(void **_before, void **_after)
     if (position < current->size - HEADER_SIZE)
     {
       // Moving the block to the beginning of the allocated memory
-      memmove(position, current->size - HEADER_SIZE, *(size_t *)(current->size - HEADER_SIZE) + HEADER_SIZE);
+      memmove(position, current->size - HEADER_SIZE, List_getSize(current->size - HEADER_SIZE) + HEADER_SIZE);
       _before[compacted_size] = current->size; // Updating the before array
       current->size = position + HEADER_SIZE;  // Updating the block
       _after[compacted_size] = current->size;  // Updating the after array
       compacted_size += 1;                     // Updating the compacted size
     }
     current = current->next;
-    position += *(size_t *)(position) + HEADER_SIZE; // Updating the position
+    position += List_getSize(position) + HEADER_SIZE; // Updating the position
   }
   // Resetting the free list
   List_destroy(&myalloc.free);
@@ -226,7 +226,7 @@ int available_memory()
   struct memoryBlock *current = myalloc.free;
   while (current != NULL)
   {
-    available_memory_size += (int)*(size_t *)(current->size - HEADER_SIZE);
+    available_memory_size += List_getSizeInt(current->size - HEADER_SIZE);
     current = current->next;
   }
   pthread_mutex_unlock(&mutex); // Unlock mutex after calculating
@@ -252,7 +252,7 @@ void get_statistics(struct Stats *_stat)
   // Calculate allocated size and chunks
   while (current_allocated != NULL)
   {
-    stats.allocated_size += (int)*(size_t *)(current_allocated->size - HEADER_SIZE);
+    stats.allocated_size += List_getSizeInt(current_allocated->size - HEADER_SIZE);
     stats.allocated_chunks++;
     current_allocated = current_allocated->next;
   }
@@ -260,7 +260,7 @@ void get_statistics(struct Stats *_stat)
   // Calculate free size and chunks
   while (current_free != NULL)
   {
-    int current_chunk_size = (int)*(size_t *)(current_free->size - HEADER_SIZE);
+    int current_chunk_size = List_getSizeInt(current_free->size - HEADER_SIZE);
     // Update the free size, smallest and largest chunk size and free chunks
     stats.free_size += current_chunk_size;
     stats.smallest_free_chunk_size = stats.smallest_free_chunk_size < current_chunk_size ? stats.smallest_free_chunk_size : current_chunk_size;
