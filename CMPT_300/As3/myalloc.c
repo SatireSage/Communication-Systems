@@ -127,6 +127,12 @@ void get_statistics(struct Stats *_stat)
 {
   // Populate struct Stats with the statistics
   struct Stats stats;
+  stats.allocated_size = 0;
+  stats.allocated_chunks = 0;
+  stats.free_size = 0;
+  stats.free_chunks = 0;
+  stats.smallest_free_chunk_size = myalloc.size;
+  stats.largest_free_chunk_size = 0;
 
   pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
 
