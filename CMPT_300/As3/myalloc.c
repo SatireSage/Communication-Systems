@@ -126,12 +126,7 @@ int available_memory()
 void get_statistics(struct Stats *_stat)
 {
   // Populate struct Stats with the statistics
-  int allocated_size = 0;
-  int allocated_chunks = 0;
-  int free_size = 0;
-  int free_chunks = 0;
-  int smallest_free_chunk_size = myalloc.size;
-  int largest_free_chunk_size = 0;
+  struct Stats stats;
 
   pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
 
@@ -141,31 +136,24 @@ void get_statistics(struct Stats *_stat)
   // Calculate allocated size and chunks
   while (current_allocated != NULL)
   {
-    allocated_size += (int)((struct headerBlock *)(current_allocated->size - HEADER_SIZE))->size;
-    allocated_chunks++;
+    stats.allocated_size += (int)((struct headerBlock *)(current_allocated->size - HEADER_SIZE))->size;
+    stats.allocated_chunks++;
     current_allocated = current_allocated->next;
   }
 
   // Calculate free size and chunks
   while (current_free != NULL)
   {
-    free_size += (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
-    int temp = (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
-    if (temp < smallest_free_chunk_size)
-      smallest_free_chunk_size = temp;
-    if (temp > largest_free_chunk_size)
-      largest_free_chunk_size = temp;
-    free_chunks++;
+    stats.free_size += (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
+    int current_chunk_size = (int)((struct headerBlock *)(current_free->size - HEADER_SIZE))->size;
+    stats.smallest_free_chunk_size = stats.smallest_free_chunk_size < current_chunk_size ? stats.smallest_free_chunk_size : current_chunk_size;
+    stats.largest_free_chunk_size = stats.largest_free_chunk_size > current_chunk_size ? stats.largest_free_chunk_size : current_chunk_size;
+    stats.free_chunks++;
     current_free = current_free->next;
   }
 
-  pthread_mutex_unlock(&mutex); // Unlock mutex after accessing memory
-
   // Populate stats
-  _stat->allocated_size = allocated_size;
-  _stat->allocated_chunks = allocated_chunks;
-  _stat->free_size = free_size;
-  _stat->free_chunks = free_chunks;
-  _stat->smallest_free_chunk_size = smallest_free_chunk_size;
-  _stat->largest_free_chunk_size = largest_free_chunk_size;
+  *_stat = stats;
+
+  pthread_mutex_unlock(&mutex); // Unlock mutex after accessing memory
 }
