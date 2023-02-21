@@ -59,7 +59,9 @@ void test_correct_space_allocation()
       TEST(p[i] == NULL);
     }
   }
+  // TODO: The following single test fails.
   TEST(*((uint64_t *)((char *)p[5] - HEADER_SIZE)) == 20);
+  // Working version: TEST(*((uint64_t *)((char *)p[5] - HEADER_SIZE)) == 20 - HEADER_SIZE);
   TEST(available_memory() == 0);
   for (int i = 0; i < 10; i++)
   {
