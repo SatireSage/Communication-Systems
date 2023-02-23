@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     // 7.  Wait until there is no more candies
     while (!bbuff_is_empty())
     {
-        printf("\033[1;34m");
+        printf("\033[1;35m");
         printf("Waiting for all candies to be consumed");
         printf("\n\033[0m");
         sleep(1);
