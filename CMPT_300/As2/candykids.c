@@ -14,7 +14,7 @@ static bool factory_stop_flag = false;
 typedef struct
 {
     int factory_number;
-    double creation_ts_ms;
+    double time_stamp_in_ms;
 } candy_t;
 
 double current_time_in_ms(void)
@@ -30,7 +30,8 @@ void extract_arguments(int argc, char *argv[])
     // Check if the number of arguments is correct. Only 3 arguments are allowed.
     if (argc != 4)
     {
-        printf("\033[1;31mError: Invalid Number of Arguments. Please run script again with only 3 arguments.\n\033[0m");
+        printf("\033[1;31mError: Invalid Number of Arguments. Please run script again with only 3 arguments.\n");
+        printf("Usage: ./candykids <#factories> <#kids> <#seconds>\n\033[0m");
         exit(1);
     }
     int arguments[3];
@@ -71,7 +72,7 @@ void *candy_factory(void *factory_number)
         }
         // Set the factory number and creation timestamp
         candy->factory_number = factory_num;
-        candy->creation_ts_ms = current_time_in_ms();
+        candy->time_stamp_in_ms = current_time_in_ms();
         // Insert the candy into the bounded buffer
         bbuff_blocking_insert(candy);
         // Record the time in the stats module
@@ -91,12 +92,13 @@ void *kid(void *kid_id)
     while (true)
     {
         // Consume a candy from the bounded buffer
-        candy_t *consume_candy = bbuff_blocking_extract();
+        candy_t *candy = bbuff_blocking_extract();
         // Record the time in the stats module
-        double consumption_time = current_time_in_ms() - consume_candy->creation_ts_ms;
-        stats_record_consumed(consume_candy->factory_number, consumption_time);
-        // Free the memory of the candy
-        free(consume_candy);
+        double consumption_time = current_time_in_ms() - candy->time_stamp_in_ms;
+        stats_record_consumed(candy->factory_number, consumption_time);
+        // Free the memory of the candy and prevent dangling pointer
+        free(candy);
+        candy = NULL;
         // Sleep for the number of seconds
         sleep(rand() % 2);
     }
@@ -108,9 +110,9 @@ int main(int argc, char *argv[])
     // 1.  Extract arguments
     extract_arguments(argc, argv);
     // 2.  Initialization of modules
-    srand(time(NULL));
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
+    srand(time(NULL));        // Seed the random number generator
+    pthread_attr_t attr;      // Thread attributes (Since we will have multiple threads)
+    pthread_attr_init(&attr); // Initialize the thread attributes
     stats_init(factories);
     bbuff_init();
     // 3.  Launch candy-factory threads
@@ -176,5 +178,6 @@ int main(int argc, char *argv[])
     // 10. Cleanup any allocated memory
     stats_cleanup();
     bbuff_cleanup();
+
     return 0;
 }

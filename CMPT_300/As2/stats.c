@@ -14,9 +14,8 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex
 
 void stats_init(int num_producers)
 {
-    pthread_mutex_init(&mutex, NULL);                            // Initialize mutex
     num_factories = num_producers;                               // Set number of factories
-    factories = malloc(sizeof(factory_stats_t) * num_factories); // Allocate memory for factories
+    factories = malloc(num_factories * sizeof(factory_stats_t)); // Allocate memory for factories
     // Initialize values for each factory
     for (int i = 0; i < num_factories; i++)
     {
@@ -26,6 +25,7 @@ void stats_init(int num_producers)
         for (int j = 0; j < 4; j++)
             factories[i].delay_values[j] = 0;
     }
+    pthread_mutex_init(&mutex, NULL); // Initialize mutex
 }
 
 void stats_cleanup(void)
@@ -44,7 +44,9 @@ void stats_record_produced(int factory_number)
     // Lock mutex
     pthread_mutex_lock(&mutex);
     // Increment candies produced
-    factories[factory_number].candies_produced++;
+    {
+        factories[factory_number].candies_produced++;
+    }
     // Unlock mutex
     pthread_mutex_unlock(&mutex);
 }
@@ -53,19 +55,18 @@ void stats_record_consumed(int factory_number, double delay_in_ms)
 {
     // Lock mutex
     pthread_mutex_lock(&mutex);
-    // Increment candies consumed
-    factories[factory_number].candies_consumed++;
-    // Update delay values (total, average, min, max).
-    // Update total delay
-    factories[factory_number].delay_values[0] += delay_in_ms;
-    // Update average delay
-    factories[factory_number].delay_values[1] = factories[factory_number].delay_values[0] / factories[factory_number].candies_consumed;
-    // Update min delay
-    if (factories[factory_number].delay_values[2] == 0 || factories[factory_number].delay_values[2] > delay_in_ms)
-        factories[factory_number].delay_values[2] = delay_in_ms;
-    // Update max delay
-    if (factories[factory_number].delay_values[3] < delay_in_ms)
-        factories[factory_number].delay_values[3] = delay_in_ms;
+    {
+        // Increment candies consumed
+        factories[factory_number].candies_consumed++;
+        // Update delay values (total, average, min, max).
+        // Update total delay
+        factories[factory_number].delay_values[0] += delay_in_ms;
+        // Update average delay
+        factories[factory_number].delay_values[1] = factories[factory_number].delay_values[0] / factories[factory_number].candies_consumed;
+        // Update min and max
+        factories[factory_number].delay_values[2] = (factories[factory_number].delay_values[2] < delay_in_ms) ? factories[factory_number].delay_values[2] : delay_in_ms;
+        factories[factory_number].delay_values[3] = (factories[factory_number].delay_values[3] > delay_in_ms) ? factories[factory_number].delay_values[3] : delay_in_ms;
+    }
     // Unlock mutex
     pthread_mutex_unlock(&mutex);
 }
@@ -73,7 +74,8 @@ void stats_record_consumed(int factory_number, double delay_in_ms)
 void stats_display(void)
 {
     // Print statistics (yellow heading)
-    printf("\033[1;33m\nStatistics: \n");
+    printf("\033[1;33m\n");
+    printf("Statistics: \n");
     // Print header
     printf("%8s%10s%10s%20s%20s%20s\n", "Factory#", "#Made", "#Eaten", "Min Delay[ms]", "Avg Delay[ms]", "Max Delay[ms]");
     printf("\033[0m");
