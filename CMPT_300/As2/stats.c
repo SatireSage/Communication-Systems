@@ -64,7 +64,7 @@ void stats_record_consumed(int factory_number, double delay_in_ms)
         // Update average delay
         factories[factory_number].delay_values[1] = factories[factory_number].delay_values[0] / factories[factory_number].candies_consumed;
         // Update min and max
-        factories[factory_number].delay_values[2] = (factories[factory_number].delay_values[2] < delay_in_ms) ? factories[factory_number].delay_values[2] : delay_in_ms;
+        factories[factory_number].delay_values[2] = ((factories[factory_number].delay_values[2] < delay_in_ms) || (factories[factory_number].delay_values[2] == 0)) ? delay_in_ms : factories[factory_number].delay_values[2];
         factories[factory_number].delay_values[3] = (factories[factory_number].delay_values[3] > delay_in_ms) ? factories[factory_number].delay_values[3] : delay_in_ms;
     }
     // Unlock mutex
