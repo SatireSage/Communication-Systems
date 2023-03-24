@@ -40,10 +40,7 @@ void test_correct_space_allocation()
       // Inspect header
       if (i < 5)
       {
-        TEST(*(uint64_t *)((char *)ptr - HEADER_SIZE) ==
-                 (sizeof(__int32_t) * 2) + HEADER_SIZE ||
-             *(uint64_t *)((char *)ptr - HEADER_SIZE) ==
-                 (sizeof(__int32_t) * 2));
+        TEST(*(uint64_t *)((char *)ptr - HEADER_SIZE) == (sizeof(__int32_t) * 2) + HEADER_SIZE || *(uint64_t *)((char *)ptr - HEADER_SIZE) == (sizeof(__int32_t) * 2));
       }
     }
     p[i] = ptr;
@@ -59,9 +56,7 @@ void test_correct_space_allocation()
       TEST(p[i] == NULL);
     }
   }
-  // TODO: The following single test fails.
   TEST(*((uint64_t *)((char *)p[5] - HEADER_SIZE)) == 20);
-  // Working version: TEST(*((uint64_t *)((char *)p[5] - HEADER_SIZE)) == 20 - HEADER_SIZE);
   TEST(available_memory() == 0);
   for (int i = 0; i < 10; i++)
   {
@@ -199,6 +194,8 @@ void test_threading()
   }
 
   get_statistics(&stats);
+  // FIXME: allocated_size changes every time script is run
+  printf("allocated_size is %d \n", stats.allocated_size);
   TEST(stats.allocated_size == 20);
   TEST(stats.allocated_chunks == 4);
 }

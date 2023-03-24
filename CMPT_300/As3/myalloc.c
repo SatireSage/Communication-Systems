@@ -74,7 +74,7 @@ void *allocator(int _size, struct memoryBlock *block)
   }
   // If the size of the block is less than the size of the memory requested plus the size of the header, then we set the remainder to the size of the block minus the size of the memory requested
   else
-    remainder_size = List_getSize(block->size - HEADER_SIZE) - _size;
+    remainder_size = List_getSize(block->size - HEADER_SIZE);
   // Remove block from free list and add to allocated list
   List_deleteBlock(&myalloc.free, block);
   List_insertBlock(&myalloc.allocated, block);
@@ -152,9 +152,10 @@ void deallocate(void *_ptr)
   // Free allocated memory
   // Note: _ptr points to the user-visible memory. The size information is
   // stored at (char*)_ptr - HEADER_SIZE.
-  int _size = List_getSizeInt((char *)_ptr - HEADER_SIZE); // Get the size of the memory block
+  pthread_mutex_lock(&mutex);
+  int _size = List_getSizeInt((char *)_ptr - HEADER_SIZE) + HEADER_SIZE; // Get the size of the memory block
 
-  pthread_mutex_lock(&mutex);                                         // Lock mutex before deallocation
+  // Lock mutex before deallocation
   struct memoryBlock *temp = List_findBlock(myalloc.allocated, _ptr); // Find the block in the allocated list
   List_deleteBlock(&myalloc.allocated, temp);                         // Remove the block from the allocated list
   List_insertBlock(&myalloc.free, temp);                              // Add the block to the free list
@@ -235,6 +236,8 @@ int available_memory()
 
 void get_statistics(struct Stats *_stat)
 {
+  pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
+
   // Populate struct Stats with the statistics
   struct Stats stats;
   stats.allocated_size = 0;
@@ -243,8 +246,6 @@ void get_statistics(struct Stats *_stat)
   stats.free_chunks = 0;
   stats.smallest_free_chunk_size = myalloc.size;
   stats.largest_free_chunk_size = 0;
-
-  pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
 
   struct memoryBlock *current_allocated = myalloc.allocated;
   struct memoryBlock *current_free = myalloc.free;
