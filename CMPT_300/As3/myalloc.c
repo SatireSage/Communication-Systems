@@ -75,6 +75,7 @@ void *allocator(int _size, struct memoryBlock *block)
   // If the size of the block is less than the size of the memory requested plus the size of the header, then we set the remainder to the size of the block minus the size of the memory requested
   else
     remainder_size = List_getSize(block->size - HEADER_SIZE);
+
   // Remove block from free list and add to allocated list
   List_deleteBlock(&myalloc.free, block);
   List_insertBlock(&myalloc.allocated, block);
@@ -152,14 +153,11 @@ void deallocate(void *_ptr)
   // Free allocated memory
   // Note: _ptr points to the user-visible memory. The size information is
   // stored at (char*)_ptr - HEADER_SIZE.
-  pthread_mutex_lock(&mutex);
-  int _size = List_getSizeInt((char *)_ptr - HEADER_SIZE) + HEADER_SIZE; // Get the size of the memory block
-
-  // Lock mutex before deallocation
+  pthread_mutex_lock(&mutex);                                         // Lock mutex before deallocation
   struct memoryBlock *temp = List_findBlock(myalloc.allocated, _ptr); // Find the block in the allocated list
   List_deleteBlock(&myalloc.allocated, temp);                         // Remove the block from the allocated list
   List_insertBlock(&myalloc.free, temp);                              // Add the block to the free list
-  memset(_ptr, 0, _size);                                             // Clear the memory
+
   // If the allocated list is empty we clear the free list and reinitialize it
   if (myalloc.allocated == NULL)
   {
