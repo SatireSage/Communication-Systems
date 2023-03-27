@@ -2,27 +2,21 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 
 // Included list structure for the free and allocated memory lists
 #include "list.h"
 
-// Included additional header files
-#include <string.h>
-#include <pthread.h>
-
-// Size of the header
-#define HEADER_SIZE 8
-
-// Mutex for thread safety of the allocator
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#define HEADER_SIZE 8                                     // Size of the header
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread safety of the allocator
 
 struct Myalloc
 {
   enum allocation_algorithm aalgorithm;
   int size;
   void *memory;
-  // Some other data members you want,
-  // such as lists to record allocated/free memory
+  // Some other data members you want, such as lists to record allocated/free memory
   struct memoryBlock *allocated, *free;
 };
 
@@ -44,7 +38,7 @@ void initialize_allocator(int _size, enum allocation_algorithm _aalgorithm)
   assert(_size > 0);
   myalloc.aalgorithm = _aalgorithm;
   myalloc.size = _size;
-  myalloc.memory = malloc(myalloc.size);
+  myalloc.memory = malloc((size_t)myalloc.size);
   // Add some other initialization
   pthread_mutex_init(&mutex, NULL); // Initialize mutex
   myalloc.allocated = NULL;         // Initialize allocated list to NULL
@@ -61,6 +55,7 @@ void destroy_allocator()
   pthread_mutex_destroy(&mutex);    // Destroy mutex
 }
 
+// Helper function to allocate memory in the allocate function
 void *allocator(int _size, struct memoryBlock *block)
 {
   size_t remainder_size = 0;
@@ -72,7 +67,6 @@ void *allocator(int _size, struct memoryBlock *block)
     struct memoryBlock *newnode = List_createBlock(block->size + _size + HEADER_SIZE);
     List_insertBlock(&myalloc.free, newnode);
   }
-  // If the size of the block is less than the size of the memory requested plus the size of the header, then we set the remainder to the size of the block minus the size of the memory requested
   else
     remainder_size = List_getSize(block->size - HEADER_SIZE);
 
@@ -87,20 +81,20 @@ void *allocator(int _size, struct memoryBlock *block)
 void *allocate(int _size)
 {
   void *ptr = NULL;
-  assert(_size > 0); // Assert that the size of the memory requested is greater than 0
   // Allocate memory from myalloc.memory
   // ptr = address of allocated memory
+  assert(_size > 0);          // Assert that the size of the memory requested is greater than 0
   pthread_mutex_lock(&mutex); // Lock mutex before allocating
   struct memoryBlock *current = myalloc.free;
+  struct memoryBlock *temp_block = NULL;
   if (myalloc.aalgorithm == FIRST_FIT)
   {
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested
-
       if (List_getSizeInt(current->size - HEADER_SIZE) >= _size)
       {
-        ptr = allocator(_size, current);
+        ptr = allocator(_size, current); // Allocate the first fit entry
         break;
       }
       current = current->next;
@@ -108,39 +102,35 @@ void *allocate(int _size)
   }
   else if (myalloc.aalgorithm == WORST_FIT)
   {
-    struct memoryBlock *worst_block = NULL;
     int fragment_size = 0;
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested and if the fragment is larger than the current worst fragment
       if (List_getSize(current->size - HEADER_SIZE) >= _size && List_getSizeInt(current->size - HEADER_SIZE) >= _size + fragment_size)
       {
-        fragment_size = List_getSize(current->size - HEADER_SIZE) - _size;
-        worst_block = current;
+        fragment_size = List_getSize(current->size) - _size;
+        temp_block = current;
       }
       current = current->next;
     }
-    // Allocate the worst fit entry
-    if (worst_block != NULL)
-      ptr = allocator(_size, worst_block);
+    if (temp_block != NULL)
+      ptr = allocator(_size, temp_block); // Allocate the worst fit entry
   }
   else if (myalloc.aalgorithm == BEST_FIT)
   {
-    struct memoryBlock *best_block = NULL;
     int fragment_size = myalloc.size;
     while (current != NULL)
     {
       // Check if the size of the block is greater than or equal to the size of the memory requested and if the fragment is smaller than the current best fragment
       if (List_getSize(current->size - HEADER_SIZE) >= _size && List_getSizeInt(current->size - HEADER_SIZE) <= _size + fragment_size)
       {
-        fragment_size = List_getSize(current->size - HEADER_SIZE) - _size;
-        best_block = current;
+        fragment_size = List_getSize(current->size) - _size;
+        temp_block = current;
       }
       current = current->next;
     }
-    // Allocate the best fit entry
-    if (best_block != NULL)
-      ptr = allocator(_size, best_block);
+    if (temp_block != NULL)
+      ptr = allocator(_size, temp_block); // Allocate the best fit entry
   }
   pthread_mutex_unlock(&mutex); // Unlock mutex after allocating
   return ptr;                   // Return the pointer to the allocated memory
@@ -152,7 +142,7 @@ void deallocate(void *_ptr)
 
   // Free allocated memory
   // Note: _ptr points to the user-visible memory. The size information is
-  // stored at (char*)_ptr - HEADER_SIZE.
+  // stored at (char*)_ptr - 8.
   pthread_mutex_lock(&mutex);                                         // Lock mutex before deallocation
   struct memoryBlock *temp = List_findBlock(myalloc.allocated, _ptr); // Find the block in the allocated list
   List_deleteBlock(&myalloc.allocated, temp);                         // Remove the block from the allocated list
@@ -171,7 +161,7 @@ void deallocate(void *_ptr)
     size_t current_size = List_getSize(current->size - HEADER_SIZE) + HEADER_SIZE;
     if (current->size + current_size == current->next->size)
     {
-      *(size_t *)(current->size - HEADER_SIZE) += List_getSize(current->next->size - HEADER_SIZE) + HEADER_SIZE;
+      *(size_t *)(current->size - HEADER_SIZE) += List_getSize(current->next->size - HEADER_SIZE);
       List_freeBlock(&myalloc.free, List_findBlock(myalloc.free, current->next->size));
       continue;
     }
@@ -183,37 +173,28 @@ void deallocate(void *_ptr)
 int compact_allocation(void **_before, void **_after)
 {
   int compacted_size = 0;
+
   // compact allocated memory
   // update _before, _after and compacted_size
   pthread_mutex_lock(&mutex); // Lock mutex before reallocating
   struct memoryBlock *current = myalloc.allocated;
-  void *position = myalloc.memory;
   // Moving back the allocated blocks
   while (current != NULL)
   {
-    // If the block is not at the beginning of the allocated memory we move it
-    if (position < current->size - HEADER_SIZE)
+    // If the block is not at the start of the memory we move it back
+    if (myalloc.memory < current->size)
     {
-      // Moving the block to the beginning of the allocated memory
-      memmove(position, current->size - HEADER_SIZE, List_getSize(current->size - HEADER_SIZE) + HEADER_SIZE);
-      _before[compacted_size] = current->size; // Updating the before array
-      current->size = position + HEADER_SIZE;  // Updating the block
-      _after[compacted_size] = current->size;  // Updating the after array
-      compacted_size += 1;                     // Updating the compacted size
+      _before[compacted_size] = current->size;
+      _after[compacted_size] = current->size;
+      compacted_size += 1;
     }
     current = current->next;
-    position += List_getSize(position) + HEADER_SIZE; // Updating the position
   }
-  // Resetting the free list
-  List_destroy(&myalloc.free);
-  // Adding the first header
-  memset(position, 0, myalloc.size + myalloc.memory - position);
-  struct memoryBlock *temp = List_createBlock(position + HEADER_SIZE);
+  // Adding the free block to the end of the allocated blocks
+  struct memoryBlock *temp = List_createBlock(myalloc.memory + HEADER_SIZE);
   List_insertBlock(&myalloc.free, temp);
-  // Setting the size of the free block
-  size_t newHeader = myalloc.size + myalloc.memory - position - HEADER_SIZE;
-  memcpy(position, &newHeader, HEADER_SIZE);
-  pthread_mutex_unlock(&mutex); // Unlock mutex after reallocating
+  memcpy(myalloc.memory, &myalloc.size, HEADER_SIZE); // Setting the size of the free block
+  pthread_mutex_unlock(&mutex);                       // Unlock mutex after reallocating
   return compacted_size;
 }
 
@@ -234,20 +215,19 @@ int available_memory()
 
 void get_statistics(struct Stats *_stat)
 {
-  pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
-
   // Populate struct Stats with the statistics
   struct Stats stats;
   stats.allocated_size = 0;
   stats.allocated_chunks = 0;
   stats.free_size = 0;
   stats.free_chunks = 0;
-  stats.smallest_free_chunk_size = myalloc.size;
   stats.largest_free_chunk_size = 0;
 
+  pthread_mutex_lock(&mutex); // Lock mutex before accessing memory
+
+  stats.smallest_free_chunk_size = myalloc.size;
   struct memoryBlock *current_allocated = myalloc.allocated;
   struct memoryBlock *current_free = myalloc.free;
-
   // Calculate allocated size and chunks
   while (current_allocated != NULL)
   {
@@ -255,21 +235,16 @@ void get_statistics(struct Stats *_stat)
     stats.allocated_chunks++;
     current_allocated = current_allocated->next;
   }
-
   // Calculate free size and chunks
   while (current_free != NULL)
   {
     int current_chunk_size = List_getSizeInt(current_free->size - HEADER_SIZE);
-    // Update the free size, smallest and largest chunk size and free chunks
     stats.free_size += current_chunk_size;
     stats.smallest_free_chunk_size = stats.smallest_free_chunk_size < current_chunk_size ? stats.smallest_free_chunk_size : current_chunk_size;
     stats.largest_free_chunk_size = stats.largest_free_chunk_size > current_chunk_size ? stats.largest_free_chunk_size : current_chunk_size;
     stats.free_chunks++;
     current_free = current_free->next;
   }
-
-  // Populate stats
   *_stat = stats;
-
   pthread_mutex_unlock(&mutex); // Unlock mutex after accessing memory
 }
