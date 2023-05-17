@@ -1,7 +1,7 @@
 # Communication Systems Lab with MATLAB Simulink
 
 Authors:
-[Sahaj Singh](https://github.com/SatireSage),[Samin Moradkhan](https://github.com/saminmrn), [Rose Epstein](https://github.com/roseeeeeeeep)
+[Sahaj Singh](https://github.com/SatireSage), [Samin Moradkhan](https://github.com/saminmrn), [Rose Epstein](https://github.com/roseeeeeeeep)
 
 This repository contains code for the successful completion of tasks in the Communication Systems Lab using MATLAB Simulink. The lab is divided into three parts, where we explore different aspects of communication systems such as Amplitude Modulation (AM), Frequency Modulation (FM), Oscilloscope, and Spectrum Analyzer.
 
